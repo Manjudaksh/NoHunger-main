@@ -45,10 +45,16 @@ const EditCategoryModal = ({ isOpen, onClose, category, onUpdate }) => {
         e.preventDefault();
         setLoading(true);
 
+        if (!name.trim()) {
+            toast.error("Category name is required");
+            setLoading(false);
+            return;
+        }
+
         try {
             const formData = new FormData();
-            formData.append('name', name);
-            formData.append('description', description);
+            formData.append('name', name.trim());
+            formData.append('description', description.trim());
 
             if (selectedImage) {
                 formData.append('image', selectedImage);
@@ -57,11 +63,7 @@ const EditCategoryModal = ({ isOpen, onClose, category, onUpdate }) => {
             // Critical: Backend expects 'true' string or boolean that converts to string
             formData.append('removeImage', removeImage);
 
-            const res = await api.put(`/categories/${category._id}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            const res = await api.put(`/categories/${category._id}`, formData);
 
             toast.success("Category Updated Successfully");
             onUpdate(res.data); // Update parent state

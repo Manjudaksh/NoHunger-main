@@ -13,10 +13,10 @@ exports.createCategory = async (req, res) => {
         const category = await Category.create({
             name,
             description,
-            image: req.file ? req.file.path : ''
+            image: req.file ? req.file.path.replace(/\\/g, "/") : ''
         });
 
-        console.log(req.file);
+        console.log("New Category Created:", category);
         res.status(201).json(category);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -87,17 +87,28 @@ exports.updateCategory = async (req, res) => {
 
         let imagePath = category.image;
 
+        console.log("Update Body:", req.body);
+        console.log("Update File:", req.file);
+
         // Handle Image Update or Removal
         if (req.file) {
             // New image uploaded: Delete old image if exists
             if (category.image && fs.existsSync(category.image)) {
-                fs.unlinkSync(category.image);
+                try {
+                    fs.unlinkSync(category.image);
+                } catch (err) {
+                    console.error("Failed to delete old image:", err);
+                }
             }
-            imagePath = req.file.path;
+            imagePath = req.file.path.replace(/\\/g, "/");
         } else if (removeImage === 'true') {
             // Explicit removal requested: Delete old image if exists
             if (category.image && fs.existsSync(category.image)) {
-                fs.unlinkSync(category.image);
+                try {
+                    fs.unlinkSync(category.image);
+                } catch (err) {
+                    console.error("Failed to delete old image:", err);
+                }
             }
             imagePath = ''; // Or null, depending on your schema. Empty string is safer for file paths usually.
         }

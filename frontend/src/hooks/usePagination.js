@@ -15,7 +15,8 @@ const usePagination = (endpoint, initialLimit = 10) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await api.get(`${endpoint}?page=${page}&limit=${limit}`);
+            const separator = endpoint.includes('?') ? '&' : '?';
+            const res = await api.get(`${endpoint}${separator}page=${page}&limit=${limit}`);
             // Handle different response structures from standard vs paginated endpoints
             // Backend returns { categories: [], total, totalPages, currentPage } OR { foods: [], ... }
 
@@ -24,8 +25,12 @@ const usePagination = (endpoint, initialLimit = 10) => {
             // Check keys to find the array data
             if (res.data.categories) fetchedData = res.data.categories;
             else if (res.data.foods) fetchedData = res.data.foods;
+            else if (res.data.orders) fetchedData = res.data.orders;
             else if (Array.isArray(res.data)) fetchedData = res.data; // Fallback if no specific key
             else fetchedData = []; // Should not happen with current backend
+
+            console.log("usePagination API Response:", res.data);
+            console.log("Determined fetchedData:", fetchedData);
 
             setData(fetchedData);
             setTotalPages(res.data.totalPages || 1);
@@ -72,7 +77,10 @@ const usePagination = (endpoint, initialLimit = 10) => {
         jumpToPage,
         setPage,
         setLimit,
-        refresh
+        setPage,
+        setLimit,
+        refresh,
+        setData
     };
 };
 

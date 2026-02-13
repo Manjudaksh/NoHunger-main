@@ -4,12 +4,10 @@ import { IoSearch } from "react-icons/io5";
 import { CgShoppingBag } from "react-icons/cg";
 import { dataContext } from '../context/UserContext';
 import { useSelector } from 'react-redux';
+import { server } from '../helpers/api';
 const Nav = () => {
   let { input, setInput, cate, setCate, showCart, setShowCart, foodItems } = useContext(dataContext);
-  useEffect(() => {
-    let newlist = foodItems.filter((item) => item?.name?.toLowerCase().includes((input || "").toLowerCase()))
-    setCate(newlist)
-  }, [input, foodItems])
+
 
   let items = useSelector(state => state.cart)
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { IoClose, IoPrintOutline } from "react-icons/io5";
 
-const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate }) => {
-    const [includeTax, setIncludeTax] = useState(true);
+const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate, deliveryFee = 0 }) => {
+    const [includeTax, setIncludeTax] = useState(false);
     const [subtotal, setSubtotal] = useState(0);
     const [tax, setTax] = useState(0);
     const [total, setTotal] = useState(0);
@@ -14,8 +14,16 @@ const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate }) =
         const newTax = includeTax ? (newSubtotal * 0.18) : 0;
         setTax(newTax);
 
-        setTotal(newSubtotal + newTax);
-    }, [items, includeTax]);
+        setTotal(newSubtotal + newTax + deliveryFee);
+    }, [items, includeTax, deliveryFee]);
+
+    useEffect(() => {
+        // Lock body scroll when modal is open
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
+    }, []);
 
     const handlePrint = () => {
         window.print();
@@ -25,19 +33,25 @@ const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate }) =
     const formattedTime = orderDate ? new Date(orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 print:bg-white print:static print:h-auto print:backdrop-blur-none">
-            <div className="bg-white w-[90%] md:w-[400px] rounded-sm shadow-2xl relative animate-fade-in-up print:shadow-none print:w-full print:p-0 font-mono text-sm border border-gray-200">
+        <div
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 print:bg-white print:static print:h-auto print:backdrop-blur-none p-4 transition-opacity duration-300"
+        >
+            <div
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white w-full max-w-md rounded-xl shadow-2xl relative animate-fade-in-up print:shadow-none print:w-full print:p-0 font-mono text-sm border border-gray-200 max-h-[90vh] overflow-y-auto flex flex-col"
+            >
 
                 {/* Close Button (Hidden in Print) */}
                 <button
                     onClick={onClose}
-                    className="absolute -top-10 right-0 md:-right-10 text-white hover:text-red-400 transition-colors print:hidden"
+                    className="absolute top-2 right-2 md:-right-12 md:top-0 text-gray-500 md:text-white hover:text-red-500 md:hover:text-red-400 transition-colors print:hidden p-2"
                 >
                     <IoClose size={32} />
                 </button>
 
                 {/* Receipt Content */}
-                <div className="p-6 md:p-8 bg-white" id="receipt">
+                <div className="p-6 md:p-8 bg-white flex-1" id="receipt">
                     {/* Header */}
                     <div className="text-center mb-6">
                         <h2 className="text-2xl font-bold font-heading text-gray-900 tracking-wider">NoHunger</h2>
@@ -72,8 +86,10 @@ const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate }) =
                             </thead>
                             <tbody className="text-gray-800">
                                 {items.map((item) => (
-                                    <tr key={item.id} className="border-b border-gray-100 last:border-0">
-                                        <td className="py-2 font-medium font-heading truncate max-w-[120px] capitalize">{item.name}</td>
+                                    <tr key={item.id || item.foodId} className="border-b border-gray-100 last:border-0">
+                                        <td className="py-2 font-medium font-heading truncate max-w-[120px] capitalize">
+                                            {item.name}
+                                        </td>
                                         <td className="py-2 text-center">{item.qty}</td>
                                         <td className="py-2 text-right">₹{item.price}</td>
                                         <td className="py-2 text-right font-semibold">
@@ -98,6 +114,10 @@ const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate }) =
                             <span>Tax {includeTax ? '(18%)' : '(0%)'}</span>
                             <span>₹{tax.toFixed(2)}</span>
                         </div>
+                        <div className="flex justify-between">
+                            <span>Delivery Fee</span>
+                            <span>₹{deliveryFee.toFixed(2)}</span>
+                        </div>
 
                         <div className="border-b-2 border-dashed border-gray-300 my-2"></div>
 
@@ -115,7 +135,7 @@ const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate }) =
                 </div>
 
                 {/* Actions (Hidden in Print) */}
-                <div className="bg-gray-50 p-4 border-t border-gray-100 flex gap-3 print:hidden rounded-b-sm">
+                <div className="bg-gray-50 p-4 border-t border-gray-100 flex gap-3 print:hidden rounded-b-xl sticky bottom-0 z-10 shrink-0">
                     <div className="flex items-center gap-2 flex-1">
                         <input
                             type="checkbox"

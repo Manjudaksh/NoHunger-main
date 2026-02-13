@@ -78,9 +78,7 @@ const EditItem = () => {
 
         try {
             setLoading(true);
-            await api.put(`/foods/${id}`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            await api.put(`/foods/${id}`, formData);
             toast.success("Item updated successfully");
             navigate('/admin/item');
         } catch (error) {

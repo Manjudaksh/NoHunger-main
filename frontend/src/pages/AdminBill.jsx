@@ -11,6 +11,9 @@ const AdminBill = () => {
     const [selectedDate, setSelectedDate] = useState('');
     const [viewBill, setViewBill] = useState(null); // Stores the order object to be viewed
 
+
+
+
     // Helper to build query string including date
     const buildQuery = (params) => {
         let query = `?page=${params.page}&limit=${params.limit}`;
@@ -20,6 +23,8 @@ const AdminBill = () => {
         return query;
     };
 
+    const endpoint = selectedDate ? `/orders?date=${selectedDate}` : '/orders';
+
     const {
         data: orders,
         loading,
@@ -27,8 +32,12 @@ const AdminBill = () => {
         totalPages,
         currentPage,
         handlePageChange,
-        refreshData
-    } = usePagination('/orders', 10, buildQuery({ page: 1, limit: 10 }));
+        refreshData,
+        setData,
+        setPage // Extract setPage to reset pagination on filter change
+    } = usePagination(endpoint, 10);
+
+
 
     // Re-fetch when date changes. 
     // Note: usePagination dependencies should include selectedDate if we want auto-refetch, 
@@ -65,14 +74,40 @@ const AdminBill = () => {
     // I'll assume standard appending. 
 
     // Handle Status Update
+    const [updatingStatus, setUpdatingStatus] = useState({});
+
+    // Handle Status Update
     const toggleStatus = async (order) => {
+        // Prevent multiple clicks or editing paid orders
+        if (updatingStatus[order._id] || order.status === 1) return;
+
         try {
+            // Set loading state for this specific order
+            setUpdatingStatus(prev => ({ ...prev, [order._id]: true }));
+
             const newStatus = order.status === 1 ? 2 : 1; // Toggle 1 (Paid) <-> 2 (Unpaid)
+
+            // Call API
             await api.put(`/orders/${order._id}/status`, { status: newStatus });
+
+            // Update UI locally without refetching
+            setData(prevOrders =>
+                prevOrders.map(o =>
+                    o._id === order._id ? { ...o, status: newStatus } : o
+                )
+            );
+
             toast.success(`Order marked as ${newStatus === 1 ? 'Paid' : 'Unpaid'}`);
-            refreshData(); // Reload table
         } catch (err) {
+            console.error(err);
             toast.error("Failed to update status");
+        } finally {
+            // Clear loading state
+            setUpdatingStatus(prev => {
+                const newState = { ...prev };
+                delete newState[order._id];
+                return newState;
+            });
         }
     };
 
@@ -98,8 +133,7 @@ const AdminBill = () => {
                         value={selectedDate}
                         onChange={(e) => {
                             setSelectedDate(e.target.value);
-                            // Theoretically this state change triggers re-render 
-                            // and if usePagination uses the url arg in dependency, it refetches.
+                            setPage(1); // Reset to first page when filter changes
                         }}
                         className="outline-none text-gray-700 font-medium"
                     />
@@ -114,63 +148,75 @@ const AdminBill = () => {
             <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
+
                         <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 text-sm uppercase tracking-wider">
-                                <th className="p-4 font-medium">Date</th>
-                                <th className="p-4 font-medium">User Name</th>
-                                <th className="p-4 font-medium">Phone Number</th>
-                                <th className="p-4 font-medium">Email</th>
-                                <th className="p-4 font-medium">Amount</th>
-                                <th className="p-4 font-medium text-center">Receipt</th>
-                                <th className="p-4 font-medium text-center">Status</th>
+                            <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 text-xs font-semibold uppercase tracking-wider">
+                                <th className="px-4 py-3">Order ID</th>
+                                <th className="px-4 py-3">Date & Time</th>
+                                <th className="px-4 py-3">User Name</th>
+                                <th className="px-4 py-3">Phone</th>
+                                <th className="px-4 py-3">Email</th>
+                                <th className="px-4 py-3 text-right">Amount</th>
+                                <th className="px-4 py-3 text-center">Action</th>
+                                <th className="px-4 py-3 text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="7" className="p-8 text-center text-gray-500">Loading orders...</td>
+                                    <td colSpan="8" className="p-8 text-center text-gray-500">Loading orders...</td>
                                 </tr>
                             ) : error ? (
                                 <tr>
-                                    <td colSpan="7" className="p-8 text-center text-red-500">{error}</td>
+                                    <td colSpan="8" className="p-8 text-center text-red-500">{error}</td>
                                 </tr>
                             ) : orders.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="p-8 text-center text-gray-400">No orders found.</td>
+                                    <td colSpan="8" className="p-8 text-center text-gray-400">No orders found.</td>
                                 </tr>
                             ) : (
                                 orders.map((order) => (
-                                    <tr key={order._id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="p-4 text-gray-600 text-sm whitespace-nowrap">
-                                            {new Date(order.createdAt).toLocaleDateString()}
+                                    <tr key={order._id} className="hover:bg-gray-50 transition-colors text-sm">
+                                        <td className="px-4 py-3 text-gray-500 font-mono text-xs">
+                                            #{order._id.slice(-6).toUpperCase()}
                                         </td>
-                                        <td className="p-4 font-medium text-gray-800">{order.user.name}</td>
-                                        <td className="p-4 text-gray-600">{order.user.phone}</td>
-                                        <td className="p-4 text-gray-600 truncate max-w-[150px]" title={order.user.email}>{order.user.email}</td>
-                                        <td className="p-4 font-bold text-gray-800">₹{order.totalAmount}</td>
+                                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-gray-700">{new Date(order.createdAt).toLocaleDateString()}</span>
+                                                <span className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{order.user?.name || "Unknown"}</td>
+                                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{order.user?.phone || "N/A"}</td>
+                                        <td className="px-4 py-3 text-gray-600 max-w-[150px] truncate" title={order.user?.email || ""}>{order.user?.email || "N/A"}</td>
+                                        <td className="px-4 py-3 font-bold text-gray-800 text-right">₹{order.totalAmount}</td>
 
                                         {/* Bill Button */}
-                                        <td className="p-4 text-center">
+                                        <td className="px-4 py-3 text-center">
                                             <button
                                                 onClick={() => setViewBill(order)}
-                                                className="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm font-semibold hover:bg-blue-100 transition-colors"
+                                                className="text-blue-600 hover:text-blue-800 font-medium text-xs underline decoration-1 underline-offset-2 transition-colors"
                                             >
                                                 View Bill
                                             </button>
                                         </td>
 
                                         {/* Paid Status Button */}
-                                        <td className="p-4 text-center">
+                                        <td className="px-4 py-3 text-center">
                                             <button
                                                 onClick={() => toggleStatus(order)}
+                                                disabled={updatingStatus[order._id] || order.status === 1}
+                                                title={order.status === 1 ? "Paid bills cannot be modified" : "Click to mark as Paid"}
                                                 className={`
-                                                    px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide transition-all shadow-sm
-                                                    ${order.status === 1
-                                                        ? 'bg-green-100 text-green-700 border border-green-200'
-                                                        : 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-200'}
+                                                    px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm border
+                                                    ${updatingStatus[order._id]
+                                                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-wait'
+                                                        : order.status === 1
+                                                            ? 'bg-green-50 text-green-600 border-green-200 cursor-not-allowed'
+                                                            : 'bg-white text-red-600 border-red-200 hover:bg-red-50 cursor-pointer'}
                                                 `}
                                             >
-                                                {order.status === 1 ? 'Paid' : 'Unpaid'}
+                                                {updatingStatus[order._id] ? '...' : (order.status === 1 ? 'Paid' : 'Unpaid')}
                                             </button>
                                         </td>
                                     </tr>
@@ -206,6 +252,9 @@ const AdminBill = () => {
             {viewBill && (
                 <Bill
                     items={viewBill.items}
+                    customerDetails={viewBill.user}
+                    orderDate={viewBill.createdAt}
+                    deliveryFee={20}
                     onClose={() => setViewBill(null)}
                     isAdmin={true}
                 />

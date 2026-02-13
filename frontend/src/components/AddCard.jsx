@@ -6,6 +6,8 @@ import { RemoveItem } from "../redux/cartSlice";
 import { IncrementQty } from "../redux/cartSlice";
 import { DecrementQty } from "../redux/cartSlice";
 
+import { server } from "../helpers/api";
+
 const AddCard = ({ name, id, price, image, qty }) => {
 
   let dispatch = useDispatch()
@@ -13,7 +15,7 @@ const AddCard = ({ name, id, price, image, qty }) => {
     <div className="w-full h-[120px] p-2 shadow-lg flex justify-between">
       <div className="w-[60%] h-full flex gap-5">
         <div className="w-[60%] h-full overflow-hidden rounded-md">
-          <img className="object-cover rounded-md" src={image} alt="" />
+          <img className="object-cover rounded-md" src={image ? `${server}/${image}` : "https://placehold.co/600x400?text=No+Image"} alt="" />
         </div>
         <div className="w-[40%] h-full flex flex-col gap-3">
           <div className="text-md text-gray-600 font-semibold font-heading ml-2 capitalize">{name}</div>

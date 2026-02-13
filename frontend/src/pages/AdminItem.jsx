@@ -4,6 +4,7 @@ import { dataContext } from '../context/UserContext';
 import { server, api } from '../helpers/api'; // Ensure api is imported for delete
 import { toast } from 'react-toastify';
 import { FaEdit, FaTrash, FaPlus, FaUtensils } from 'react-icons/fa';
+import { IoArrowBack } from 'react-icons/io5';
 import usePagination from '../hooks/usePagination';
 
 const AdminItem = () => {
@@ -57,9 +58,17 @@ const AdminItem = () => {
             <div className='max-w-7xl mx-auto'>
                 {/* Header Section */}
                 <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8'>
-                    <div>
-                        <h1 className='text-3xl font-extrabold font-heading text-gray-800 tracking-tight'>Food Item Management</h1>
-                        <p className='text-gray-500 mt-1 text-sm'>Manage your restaurant's food items.</p>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="p-2 bg-white rounded-lg shadow-sm hover:bg-gray-100 text-gray-600 transition-colors"
+                        >
+                            <IoArrowBack size={24} />
+                        </button>
+                        <div>
+                            <h1 className='text-3xl font-extrabold font-heading text-gray-800 tracking-tight'>Food Item Management</h1>
+                            <p className='text-gray-500 mt-1 text-sm'>Manage your restaurant's food items.</p>
+                        </div>
                     </div>
                     <button
                         onClick={() => navigate('/admin/add-item')}

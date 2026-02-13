@@ -5,6 +5,8 @@ import { AddItem } from '../redux/cartSlice';
 import { toast } from 'react-toastify';
 import { FaShoppingCart } from 'react-icons/fa';
 
+import { server } from '../helpers/api';
+
 const Card = ({ name = "Unknown Item", image, id, price, type = "veg" }) => {
   let dispatch = useDispatch();
 
@@ -14,7 +16,7 @@ const Card = ({ name = "Unknown Item", image, id, price, type = "veg" }) => {
       {/* Image Container with Zoom Effect */}
       <div className='w-full h-[180px] overflow-hidden relative'>
         <img
-          src={image || "https://placehold.co/600x400?text=No+Image"}
+          src={image ? `${server}/${image}` : "https://placehold.co/600x400?text=No+Image"}
           alt={name}
           className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'
         />

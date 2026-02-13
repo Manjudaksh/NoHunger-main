@@ -6,6 +6,7 @@ export default function UserContext({ children }) {
   let [cate, setCate] = useState([]); // Displayed/Filtered items
   let [foodItems, setFoodItems] = useState([]); // All items from DB
   let [categories, setCategories] = useState([]);
+  let [activeCategory, setActiveCategory] = useState("All"); // Lifted state
   let [admin, setAdmin] = useState(JSON.parse(localStorage.getItem("user")));
   let [input, setInput] = useState("");
   let [showCart, setShowCart] = useState(false);
@@ -24,16 +25,46 @@ export default function UserContext({ children }) {
     try {
       const res = await api.get("/foods");
       setFoodItems(res.data);
-      setCate(res.data); // Initialize displayed items with all foods
+      // Note: We don't setCate here anymore to avoid resetting filters on poll
     } catch (error) {
       console.error("Error fetching foods:", error);
     }
   };
 
+  // Initial Fetch & Polling
   useEffect(() => {
     getCategories();
     getFoodItems();
+
+    // Poll every 4 seconds
+    const interval = setInterval(() => {
+      getCategories();
+      getFoodItems();
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  // Unified Filtering Logic
+  useEffect(() => {
+    let filteredList = [...foodItems];
+
+    // 1. Filter by Category
+    if (activeCategory !== "All") {
+      filteredList = filteredList.filter(
+        (item) => item.categoryId?.name === activeCategory || item.category === activeCategory
+      );
+    }
+
+    // 2. Filter by Search Input (Global Search)
+    if (input) {
+      filteredList = filteredList.filter((item) =>
+        item.name.toLowerCase().includes(input.toLowerCase())
+      );
+    }
+
+    setCate(filteredList);
+  }, [foodItems, activeCategory, input]);
 
   let data = {
     input,
@@ -49,7 +80,9 @@ export default function UserContext({ children }) {
     foodItems,
     setFoodItems,
     admin,
-    setAdmin
+    setAdmin,
+    activeCategory,
+    setActiveCategory
   };
   return (
     <dataContext.Provider value={data}>

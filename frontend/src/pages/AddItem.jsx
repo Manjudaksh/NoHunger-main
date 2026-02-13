@@ -46,9 +46,7 @@ const AddItem = () => {
 
         try {
             setLoading(true);
-            await api.post("/foods", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            await api.post("/foods", formData);
             toast.success("Item added successfully");
             navigate('/admin/item'); // Redirect to listing page
         } catch (error) {

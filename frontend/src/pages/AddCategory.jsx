@@ -62,9 +62,7 @@ const AddCategory = () => {
         }
 
         try {
-            const res = await api.post("/categories", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            const res = await api.post("/categories", formData);
             if (res.status === 201) {
                 toast.success("Category added successfully");
                 navigate("/admin/category");

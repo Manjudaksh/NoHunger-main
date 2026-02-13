@@ -10,15 +10,12 @@ import Bill from "../components/Bill";
 import { FaUtensils, FaPizzaSlice, FaHamburger, FaIceCream, FaCoffee } from "react-icons/fa";
 import { GiChickenOven, GiNoodles, GiSandwich } from "react-icons/gi";
 import { clearCart } from "../redux/cartSlice";
-import { api } from "../helpers/api";
+import { api, server } from "../helpers/api";
 
 const Home = () => {
-  let { cate, setCate, input, showCart, setShowCart, categories, foodItems } = useContext(dataContext);
-
-
+  let { cate, setCate, input, showCart, setShowCart, categories, foodItems, activeCategory, setActiveCategory } = useContext(dataContext);
 
   const [showBill, setShowBill] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("All");
 
   // User details for order
   const [userDetails, setUserDetails] = useState({
@@ -140,10 +137,10 @@ const Home = () => {
                                   px-4 py-3 md:py-4 rounded-xl flex md:flex-row items-center gap-3 cursor-pointer transition-all duration-200 group
                                   ${activeCategory === item.name ? 'bg-green-600 text-white shadow-lg shadow-green-200 scale-105' : 'bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-700'}
                               `}
-                onClick={() => filter(item.name)}
+                onClick={() => setActiveCategory(item.name)}
               >
                 <div className={`w-8 h-8 rounded-md flex items-center justify-center overflow-hidden ${activeCategory === item.name ? 'ring-2 ring-white/30' : 'bg-white shadow-sm'}`}>
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  <img src={item.image ? `${server}/${item.image}` : "https://placehold.co/100?text=Cat"} alt={item.name} className="w-full h-full object-cover" />
                 </div>
                 <span className="font-semibold font-heading text-sm whitespace-nowrap capitalize">{item.name}</span>
               </div>
@@ -356,6 +353,7 @@ const Home = () => {
           items={checkoutOrder ? checkoutOrder.items : items}
           customerDetails={checkoutOrder ? checkoutOrder.user : userDetails}
           orderDate={checkoutOrder ? checkoutOrder.createdAt : null}
+          deliveryFee={20}
           onClose={() => {
             setShowBill(false);
             // Optional: reset checkoutOrder if you want only one-time view after success, 
