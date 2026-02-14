@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTimes, FaCamera, FaTrash } from 'react-icons/fa';
 import { api, server } from '../helpers/api';
 import { toast } from 'react-toastify';
+import ConfirmDialog from './ConfirmDialog';
 
 const EditCategoryModal = ({ isOpen, onClose, category, onUpdate }) => {
     const [name, setName] = useState('');
@@ -10,6 +11,7 @@ const EditCategoryModal = ({ isOpen, onClose, category, onUpdate }) => {
     const [selectedImage, setSelectedImage] = useState(null);
     const [removeImage, setRemoveImage] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     useEffect(() => {
         if (category) {
@@ -41,16 +43,19 @@ const EditCategoryModal = ({ isOpen, onClose, category, onUpdate }) => {
         setRemoveImage(true);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-        setLoading(true);
 
         if (!name.trim()) {
             toast.error("Category name is required");
-            setLoading(false);
             return;
         }
 
+        setShowConfirm(true);
+    };
+
+    const confirmUpdate = async () => {
+        setLoading(true);
         try {
             const formData = new FormData();
             formData.append('name', name.trim());
@@ -73,6 +78,7 @@ const EditCategoryModal = ({ isOpen, onClose, category, onUpdate }) => {
             toast.error(error.response?.data?.message || "Failed to update category");
         } finally {
             setLoading(false);
+            setShowConfirm(false);
         }
     };
 
@@ -175,6 +181,15 @@ const EditCategoryModal = ({ isOpen, onClose, category, onUpdate }) => {
                     </div>
                 </form>
             </div>
+
+            <ConfirmDialog
+                isOpen={showConfirm}
+                onClose={() => setShowConfirm(false)}
+                onConfirm={confirmUpdate}
+                title="Update Category?"
+                message="Are you sure you want to update this category's details?"
+                confirmText="Yes, Update"
+            />
         </div>
     );
 };

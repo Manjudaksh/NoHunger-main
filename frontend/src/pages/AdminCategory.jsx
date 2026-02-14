@@ -7,6 +7,7 @@ import { FaEdit, FaTrash, FaPlus, FaLayerGroup } from 'react-icons/fa';
 import { IoArrowBack } from 'react-icons/io5';
 import EditCategoryModal from '../components/EditCategoryModal';
 import usePagination from '../hooks/usePagination';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const AdminCategory = () => {
     const { admin } = useContext(dataContext);
@@ -35,10 +36,37 @@ const AdminCategory = () => {
         }
     }, [admin, navigate]);
 
-    const handleDelete = async (id) => {
-        if (window.confirm("Are you sure you want to delete this category?")) {
+    // Confirmation State
+    const [confirmAction, setConfirmAction] = useState({
+        isOpen: false,
+        type: null, // 'delete' or 'edit'
+        itemId: null,
+        title: "",
+        message: ""
+    });
+
+    const handleDeleteClick = (id) => {
+        setConfirmAction({
+            isOpen: true,
+            type: 'delete',
+            itemId: id,
+            title: "Delete Category?",
+            message: "Are you sure you want to delete this category? This will remove it permanently."
+        });
+    };
+
+    const handleEditClick = (id) => {
+        const categoryToEdit = categories.find(cat => cat._id === id);
+        if (categoryToEdit) {
+            setCurrentCategory(categoryToEdit);
+            setIsEditModalOpen(true);
+        }
+    };
+
+    const performAction = async () => {
+        if (confirmAction.type === 'delete') {
             try {
-                await api.delete(`/categories/${id}`);
+                await api.delete(`/categories/${confirmAction.itemId}`);
                 refresh(); // Refresh data using hook
                 toast.success("Category Deleted");
             } catch (error) {
@@ -46,14 +74,7 @@ const AdminCategory = () => {
                 toast.error("Failed to delete category");
             }
         }
-    };
-
-    const handleEdit = (id) => {
-        const categoryToEdit = categories.find(cat => cat._id === id);
-        if (categoryToEdit) {
-            setCurrentCategory(categoryToEdit);
-            setIsEditModalOpen(true);
-        }
+        setConfirmAction({ ...confirmAction, isOpen: false });
     };
 
     const handleUpdate = () => {
@@ -149,14 +170,14 @@ const AdminCategory = () => {
                                                 <td className='p-4 text-right'>
                                                     <div className='flex justify-end gap-2 text-gray-400'>
                                                         <button
-                                                            onClick={() => handleEdit(category._id)}
+                                                            onClick={() => handleEditClick(category._id)}
                                                             className='p-2 hover:bg-blue-100 hover:text-blue-600 rounded-full transition-colors'
                                                             title="Edit Category"
                                                         >
                                                             <FaEdit size={16} />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDelete(category._id)}
+                                                            onClick={() => handleDeleteClick(category._id)}
                                                             className='p-2 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors'
                                                             title="Delete Category"
                                                         >
@@ -242,6 +263,16 @@ const AdminCategory = () => {
                     onUpdate={handleUpdate}
                 />
             )}
+
+            <ConfirmDialog
+                isOpen={confirmAction.isOpen}
+                onClose={() => setConfirmAction({ ...confirmAction, isOpen: false })}
+                onConfirm={performAction}
+                title={confirmAction.title}
+                message={confirmAction.message}
+                isDestructive={confirmAction.type === 'delete'}
+                confirmText={confirmAction.type === 'delete' ? "Delete Category" : "Proceed to Edit"}
+            />
         </div>
     );
 };

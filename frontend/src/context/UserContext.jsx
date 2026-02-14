@@ -49,6 +49,9 @@ export default function UserContext({ children }) {
   useEffect(() => {
     let filteredList = [...foodItems];
 
+    // 0. Filter by Active Status (Always filter inactive items for the consumer view)
+    filteredList = filteredList.filter((item) => item.active !== false); // Handle undefined as true for legacy items
+
     // 1. Filter by Category
     if (activeCategory !== "All") {
       filteredList = filteredList.filter(
@@ -64,7 +67,7 @@ export default function UserContext({ children }) {
     }
 
     setCate(filteredList);
-  }, [foodItems, activeCategory, input]);
+  }, [foodItems, activeCategory, input, admin]);
 
   let data = {
     input,

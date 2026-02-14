@@ -1,18 +1,20 @@
 import React, { useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataContext } from '../context/UserContext';
-import { FaUtensils, FaArrowRight, FaShapes } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import { FaUtensils, FaArrowRight, FaShapes, FaSignOutAlt } from 'react-icons/fa';
 
 const AdminDashboard = () => {
-    const { admin } = useContext(dataContext);
+    const { admin, setAdmin } = useContext(dataContext);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (!admin && !storedUser) {
-            navigate('/admin-secret-login');
-        }
-    }, [admin, navigate]);
+    const handleLogout = () => {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        setAdmin(null);
+        toast.success("Logged out successfully");
+        navigate('/admin-secret-login');
+    };
 
     const SelectionCard = ({ title, icon, color, onClick }) => (
         <div
@@ -33,9 +35,17 @@ const AdminDashboard = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6 md:p-10 font-sans">
             <div className="max-w-5xl mx-auto">
-                <header className="mb-10 text-center">
-                    <h1 className="text-4xl font-extrabold text-gray-800 mb-3 tracking-tight">Admin Dashboard</h1>
-                    <p className="text-gray-500 text-lg">Manage your restaurant menu with ease.</p>
+                <header className="mb-10 flex justify-between items-center">
+                    <div>
+                        <h1 className="text-4xl font-extrabold text-gray-800 mb-2 tracking-tight">Admin Dashboard</h1>
+                        <p className="text-gray-500 text-lg">Manage your restaurant menu with ease.</p>
+                    </div>
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-sm"
+                    >
+                        <FaSignOutAlt /> Logout
+                    </button>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
@@ -53,8 +63,8 @@ const AdminDashboard = () => {
                     />
                     <SelectionCard
                         title="Bill"
-                        icon={<FaUtensils size={24} />} // Using same icon or maybe FaFileInvoiceDollar if available, but reusing FaUtensils for consistency or generic file icon
-                        color="bg-gradient-to-br from-blue-400 to-cyan-500" // Distinct color
+                        icon={<FaUtensils size={24} />}
+                        color="bg-gradient-to-br from-blue-400 to-cyan-500"
                         onClick={() => navigate('/admin/bill')}
                     />
                 </div>

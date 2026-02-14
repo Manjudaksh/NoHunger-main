@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataContext } from '../context/UserContext';
 import { server, api } from '../helpers/api'; // Ensure api is imported for delete
@@ -6,10 +6,20 @@ import { toast } from 'react-toastify';
 import { FaEdit, FaTrash, FaPlus, FaUtensils } from 'react-icons/fa';
 import { IoArrowBack } from 'react-icons/io5';
 import usePagination from '../hooks/usePagination';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const AdminItem = () => {
     const { admin } = useContext(dataContext);
     const navigate = useNavigate();
+
+    // Confirmation State
+    const [confirmAction, setConfirmAction] = useState({
+        isOpen: false,
+        type: null, // 'delete' or 'edit'
+        itemId: null,
+        title: "",
+        message: ""
+    });
 
     // Use custom pagination hook
     const {
@@ -31,21 +41,32 @@ const AdminItem = () => {
         }
     }, [admin, navigate]);
 
-    const handleDelete = async (id) => {
-        if (window.confirm("Are you sure you want to delete this item?")) {
+    const handleDeleteClick = (id) => {
+        setConfirmAction({
+            isOpen: true,
+            type: 'delete',
+            itemId: id,
+            title: "Delete Item?",
+            message: "Are you sure you want to delete this food item? This action cannot be undone."
+        });
+    };
+
+    const handleEditClick = (id) => {
+        navigate(`/admin/edit-item/${id}`);
+    };
+
+    const performAction = async () => {
+        if (confirmAction.type === 'delete') {
             try {
-                await api.delete(`/foods/${id}`);
-                refresh(); // Refresh list using hook
+                await api.delete(`/foods/${confirmAction.itemId}`);
+                refresh();
                 toast.success("Food Item Deleted");
             } catch (error) {
                 console.error(error);
                 toast.error("Failed to delete item");
             }
         }
-    };
-
-    const handleEdit = (id) => {
-        navigate(`/admin/edit-item/${id}`);
+        setConfirmAction({ ...confirmAction, isOpen: false });
     };
 
     // Check local storage one last time for render safety
@@ -134,14 +155,14 @@ const AdminItem = () => {
                                                 <td className='p-4 text-right'>
                                                     <div className='flex justify-end gap-2 text-gray-400'>
                                                         <button
-                                                            onClick={() => handleEdit(food._id)}
+                                                            onClick={() => handleEditClick(food._id)}
                                                             className='p-2 hover:bg-blue-100 hover:text-blue-600 rounded-full transition-colors'
                                                             title="Edit Item"
                                                         >
                                                             <FaEdit size={16} />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDelete(food._id)}
+                                                            onClick={() => handleDeleteClick(food._id)}
                                                             className='p-2 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors'
                                                             title="Delete Item"
                                                         >
@@ -219,6 +240,15 @@ const AdminItem = () => {
                     )}
                 </div>
             </div>
+            <ConfirmDialog
+                isOpen={confirmAction.isOpen}
+                onClose={() => setConfirmAction({ ...confirmAction, isOpen: false })}
+                onConfirm={performAction}
+                title={confirmAction.title}
+                message={confirmAction.message}
+                isDestructive={confirmAction.type === 'delete'}
+                confirmText={confirmAction.type === 'delete' ? "Delete Item" : "Proceed to Edit"}
+            />
         </div>
     );
 };

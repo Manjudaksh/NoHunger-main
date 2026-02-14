@@ -22,6 +22,10 @@ const FoodSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
         required: true
+    },
+    active: {
+        type: Boolean,
+        default: true
     }
 }, { timestamps: true });
 

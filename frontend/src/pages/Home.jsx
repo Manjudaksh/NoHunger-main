@@ -28,23 +28,7 @@ const Home = () => {
   const dispatch = useDispatch();
   let items = useSelector((state) => state.cart);
 
-  function filter(category) {
-    setActiveCategory(category);
-    if (category === "All") {
-      setCate(foodItems);
-    } else {
-      let newList = foodItems.filter(
-        // Assuming backend categoryId populates name or checking category usage. 
-        // Backend Food model: categoryId (ref). 
-        // We need to check if we are filtering by ID or Name. 
-        // The Categories list will provide what we click.
-        // Let's assume we filter by `categoryId.name` if populated, or we need to match IDs.
-        // UserContext `getFoodItems` likely populates categoryId -> name based on `foodController`.
-        (item) => item.categoryId?.name === category || item.category === category // Fallback
-      );
-      setCate(newList);
-    }
-  }
+
 
   let subtotal = items.reduce(
     (total, item) => total + item.qty * item.price,

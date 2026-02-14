@@ -11,6 +11,8 @@ import AdminBill from './pages/AdminBill'
 import { Routes, Route } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 
+import ProtectedAdminRoute from './components/ProtectedAdminRoute'
+
 const App = () => {
 
   return (
@@ -19,12 +21,12 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/add-category" element={<AddCategory />} />
         <Route path="/admin-secret-login" element={<AdminLogin />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/category" element={<AdminCategory />} />
-        <Route path="/admin/item" element={<AdminItem />} />
-        <Route path="/admin/add-item" element={<AddItem />} />
-        <Route path="/admin/edit-item/:id" element={<EditItem />} />
-        <Route path="/admin/bill" element={<AdminBill />} />
+        <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+        <Route path="/admin/category" element={<ProtectedAdminRoute><AdminCategory /></ProtectedAdminRoute>} />
+        <Route path="/admin/item" element={<ProtectedAdminRoute><AdminItem /></ProtectedAdminRoute>} />
+        <Route path="/admin/add-item" element={<ProtectedAdminRoute><AddItem /></ProtectedAdminRoute>} />
+        <Route path="/admin/edit-item/:id" element={<ProtectedAdminRoute><EditItem /></ProtectedAdminRoute>} />
+        <Route path="/admin/bill" element={<ProtectedAdminRoute><AdminBill /></ProtectedAdminRoute>} />
       </Routes>
       <ToastContainer />
     </>

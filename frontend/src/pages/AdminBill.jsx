@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { IoArrowBack, IoSearch } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
 import Bill from '../components/Bill'; // Adjust path
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const AdminBill = () => {
     const navigate = useNavigate();
@@ -73,41 +74,55 @@ const AdminBill = () => {
     // I can't look at it right now without tool call.
     // I'll assume standard appending. 
 
+    // Confirmation State
+    const [confirmAction, setConfirmAction] = useState({
+        isOpen: false,
+        order: null,
+        newStatus: null,
+        title: "",
+        message: ""
+    });
+
     // Handle Status Update
     const [updatingStatus, setUpdatingStatus] = useState({});
 
-    // Handle Status Update
-    const toggleStatus = async (order) => {
-        // Prevent multiple clicks or editing paid orders
+    const initiateToggleStatus = (order) => {
         if (updatingStatus[order._id] || order.status === 1) return;
 
+        const newStatus = order.status === 1 ? 2 : 1;
+        setConfirmAction({
+            isOpen: true,
+            order: order,
+            newStatus: newStatus,
+            title: "Update Bill Status",
+            message: `Are you sure you want to mark this bill as ${newStatus === 1 ? 'PAID' : 'UNPAID'}?`
+        });
+    };
+
+    const performStatusToggle = async () => {
+        const { order, newStatus } = confirmAction;
+        if (!order) return;
+
         try {
-            // Set loading state for this specific order
             setUpdatingStatus(prev => ({ ...prev, [order._id]: true }));
-
-            const newStatus = order.status === 1 ? 2 : 1; // Toggle 1 (Paid) <-> 2 (Unpaid)
-
-            // Call API
             await api.put(`/orders/${order._id}/status`, { status: newStatus });
 
-            // Update UI locally without refetching
             setData(prevOrders =>
                 prevOrders.map(o =>
                     o._id === order._id ? { ...o, status: newStatus } : o
                 )
             );
-
             toast.success(`Order marked as ${newStatus === 1 ? 'Paid' : 'Unpaid'}`);
         } catch (err) {
             console.error(err);
             toast.error("Failed to update status");
         } finally {
-            // Clear loading state
             setUpdatingStatus(prev => {
                 const newState = { ...prev };
                 delete newState[order._id];
                 return newState;
             });
+            setConfirmAction({ ...confirmAction, isOpen: false });
         }
     };
 
@@ -204,7 +219,7 @@ const AdminBill = () => {
                                         {/* Paid Status Button */}
                                         <td className="px-4 py-3 text-center">
                                             <button
-                                                onClick={() => toggleStatus(order)}
+                                                onClick={() => initiateToggleStatus(order)}
                                                 disabled={updatingStatus[order._id] || order.status === 1}
                                                 title={order.status === 1 ? "Paid bills cannot be modified" : "Click to mark as Paid"}
                                                 className={`
@@ -259,6 +274,16 @@ const AdminBill = () => {
                     isAdmin={true}
                 />
             )}
+
+            <ConfirmDialog
+                isOpen={confirmAction.isOpen}
+                onClose={() => setConfirmAction({ ...confirmAction, isOpen: false })}
+                onConfirm={performStatusToggle}
+                title={confirmAction.title}
+                message={confirmAction.message}
+                isDestructive={confirmAction.newStatus === 2} // Unpaid is destructive-ish? Or maybe Paid is definitive. Let's make it standard (blue). Actually user said "modern, styled". Blue is fine.
+                confirmText="Yes, Change Status"
+            />
         </div>
     );
 };
