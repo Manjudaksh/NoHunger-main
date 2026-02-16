@@ -42,9 +42,10 @@ const AdminDashboard = () => {
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-sm"
+                        className="flex items-center gap-2 bg-red-600 text-white px-3 md:px-5 py-2.5 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-sm"
                     >
-                        <FaSignOutAlt /> Logout
+                        <FaSignOutAlt />
+                        <span className="hidden md:inline">Logout</span>
                     </button>
                 </header>
 
