@@ -126,6 +126,29 @@ const AdminBill = () => {
         }
     };
 
+    // Handle Tax Toggle (Passed to Bill Component)
+    const handleTaxToggle = async (newTaxStatus) => {
+        if (!viewBill) return;
+
+        try {
+            const { data } = await api.put(`/orders/${viewBill._id}/tax`, { isTaxApplied: newTaxStatus });
+
+            // Update local state for the modal
+            setViewBill(data.order);
+
+            // Update list state
+            setData(prevOrders =>
+                prevOrders.map(o =>
+                    o._id === viewBill._id ? data.order : o
+                )
+            );
+            toast.success(`Tax ${newTaxStatus ? 'Enabled' : 'Disabled'}`);
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to update tax status");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 p-6 md:p-10">
             {/* Header */}
@@ -166,14 +189,14 @@ const AdminBill = () => {
 
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 text-xs font-semibold uppercase tracking-wider">
-                                <th className="px-4 py-3">Order ID</th>
-                                <th className="px-4 py-3">Date & Time</th>
-                                <th className="px-4 py-3">User Name</th>
-                                <th className="px-4 py-3">Phone</th>
-                                <th className="px-4 py-3">Email</th>
-                                <th className="px-4 py-3 text-right">Amount</th>
-                                <th className="px-4 py-3 text-center">Action</th>
-                                <th className="px-4 py-3 text-center">Status</th>
+                                <th className="px-3 py-2 text-left">Order ID</th>
+                                <th className="px-3 py-2 text-left">Date & Time</th>
+                                <th className="px-3 py-2 text-left">User Name</th>
+                                <th className="px-3 py-2 text-left">Phone</th>
+                                <th className="px-3 py-2 text-left">Email</th>
+                                <th className="px-3 py-2 text-right">Amount</th>
+                                <th className="px-3 py-2 text-center">Action</th>
+                                <th className="px-3 py-2 text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -192,38 +215,38 @@ const AdminBill = () => {
                             ) : (
                                 orders.map((order) => (
                                     <tr key={order._id} className="hover:bg-gray-50 transition-colors text-sm">
-                                        <td className="px-4 py-3 text-gray-500 font-mono text-xs">
+                                        <td className="px-3 py-2 text-gray-500 font-mono text-xs">
                                             #{order._id.slice(-6).toUpperCase()}
                                         </td>
-                                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                                        <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
                                             <div className="flex flex-col">
-                                                <span className="font-medium text-gray-700">{new Date(order.createdAt).toLocaleDateString()}</span>
-                                                <span className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                <span className="font-medium text-gray-700 text-xs">{new Date(order.createdAt).toLocaleDateString()}</span>
+                                                <span className="text-[10px] text-gray-400">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">{order.user?.name || "Unknown"}</td>
-                                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{order.user?.phone || "N/A"}</td>
-                                        <td className="px-4 py-3 text-gray-600 max-w-[150px] truncate" title={order.user?.email || ""}>{order.user?.email || "N/A"}</td>
-                                        <td className="px-4 py-3 font-bold text-gray-800 text-right">₹{order.totalAmount}</td>
+                                        <td className="px-3 py-2 font-medium text-gray-800 whitespace-nowrap text-xs">{order.user?.name || "Unknown"}</td>
+                                        <td className="px-3 py-2 text-gray-600 whitespace-nowrap text-xs">{order.user?.phone || "N/A"}</td>
+                                        <td className="px-3 py-2 text-gray-600 max-w-[150px] truncate text-xs" title={order.user?.email || ""}>{order.user?.email || "N/A"}</td>
+                                        <td className="px-3 py-2 font-bold text-gray-800 text-right text-xs">₹{order.totalAmount}</td>
 
                                         {/* Bill Button */}
-                                        <td className="px-4 py-3 text-center">
+                                        <td className="px-3 py-2 text-center">
                                             <button
                                                 onClick={() => setViewBill(order)}
                                                 className="text-blue-600 hover:text-blue-800 font-medium text-xs underline decoration-1 underline-offset-2 transition-colors"
                                             >
-                                                View Bill
+                                                View
                                             </button>
                                         </td>
 
                                         {/* Paid Status Button */}
-                                        <td className="px-4 py-3 text-center">
+                                        <td className="px-3 py-2 text-center">
                                             <button
                                                 onClick={() => initiateToggleStatus(order)}
                                                 disabled={updatingStatus[order._id] || order.status === 1}
                                                 title={order.status === 1 ? "Paid bills cannot be modified" : "Click to mark as Paid"}
                                                 className={`
-                                                    px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm border
+                                                    px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm border
                                                     ${updatingStatus[order._id]
                                                         ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-wait'
                                                         : order.status === 1
@@ -269,9 +292,11 @@ const AdminBill = () => {
                     items={viewBill.items}
                     customerDetails={viewBill.user}
                     orderDate={viewBill.createdAt}
-                    deliveryFee={20}
+                    deliveryFee={viewBill.deliveryFee || 20} // Use stored delivery fee or default
                     onClose={() => setViewBill(null)}
                     isAdmin={true}
+                    orderData={viewBill} // Pass full order object
+                    onTaxToggle={handleTaxToggle} // Pass handler
                 />
             )}
 

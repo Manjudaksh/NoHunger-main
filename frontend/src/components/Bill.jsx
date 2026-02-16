@@ -1,21 +1,64 @@
 import React, { useState, useEffect } from "react";
 import { IoClose, IoPrintOutline } from "react-icons/io5";
 
-const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate, deliveryFee = 0 }) => {
-    const [includeTax, setIncludeTax] = useState(false);
-    const [subtotal, setSubtotal] = useState(0);
-    const [tax, setTax] = useState(0);
-    const [total, setTotal] = useState(0);
+const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate, deliveryFee = 0, orderData, onTaxToggle }) => {
+    // We use data from orderData if available (persistent), effectively making this a "dumb" display component
+    // If orderData is missing (preview mode), we fall back to local calc (rendering it useful for Cart preview if needed)
 
-    useEffect(() => {
-        const newSubtotal = items.reduce((acc, item) => acc + item.price * item.qty, 0);
-        setSubtotal(newSubtotal);
+    // For Admin View, we MUST have orderData
+    // For Admin View, we MUST have orderData
 
-        const newTax = includeTax ? (newSubtotal * 0.18) : 0;
-        setTax(newTax);
+    // Calculate totals locally if orderData is missing (preview)
+    // Formula: (Price - Disc) + Tax
+    const calculateTotals = (itemsList) => {
+        return itemsList.reduce((acc, item) => {
+            const price = parseFloat(item.price);
+            const qty = item.qty;
+            const discountPercent = parseFloat(item.discount || 0);
+            const taxPercent = parseFloat(item.tax || 0);
 
-        setTotal(newSubtotal + newTax + deliveryFee);
-    }, [items, includeTax, deliveryFee]);
+            const discountAmount = price * (discountPercent / 100);
+            const priceAfterDiscount = price - discountAmount;
+            const taxAmount = priceAfterDiscount * (taxPercent / 100);
+            const finalPrice = priceAfterDiscount + taxAmount;
+
+            acc.subtotal += price * qty;
+            acc.discount += discountAmount * qty;
+            acc.tax += taxAmount * qty;
+            acc.total += finalPrice * qty;
+            return acc;
+        }, { subtotal: 0, discount: 0, tax: 0, total: 0 });
+    };
+
+    const totals = orderData
+        ? {
+            subtotal: orderData.subtotal,
+            discount: orderData.discountAmount || 0, // Fallback if old order
+            tax: orderData.taxAmount,
+            total: orderData.totalAmount
+        }
+        : calculateTotals(items);
+
+    const subtotal = totals.subtotal;
+    const tax = totals.tax;
+    const discountVal = totals.discount;
+    // For old orders without discountAmount stored, we might show 0.
+    // Ensure we don't double count delivery if it's already in totalAmount of orderData
+    // If orderData exists, totalAmount includes everything. If not, we add delivery.
+    const total = orderData ? orderData.totalAmount : (totals.total + deliveryFee);
+
+    // Local state for loading tax toggle
+    const [isUpdatingTax, setIsUpdatingTax] = useState(false);
+
+    // Derived state for tax status
+    const isTaxApplied = orderData?.isTaxApplied || false;
+
+    const handleTaxToggle = async () => {
+        if (!isAdmin || !onTaxToggle) return;
+        setIsUpdatingTax(true);
+        await onTaxToggle(!isTaxApplied);
+        setIsUpdatingTax(false);
+    };
 
     useEffect(() => {
         // Lock body scroll when modal is open
@@ -81,22 +124,46 @@ const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate, del
                                     <th className="py-2 font-normal">Item</th>
                                     <th className="py-2 text-center font-normal">Qty</th>
                                     <th className="py-2 text-right font-normal">Price</th>
+                                    <th className="py-2 text-right font-normal">Discount</th>
+                                    <th className="py-2 text-right font-normal">Tax</th>
                                     <th className="py-2 text-right font-normal">Amt</th>
                                 </tr>
                             </thead>
                             <tbody className="text-gray-800">
-                                {items.map((item) => (
-                                    <tr key={item.id || item.foodId} className="border-b border-gray-100 last:border-0">
-                                        <td className="py-2 font-medium font-heading truncate max-w-[120px] capitalize">
-                                            {item.name}
-                                        </td>
-                                        <td className="py-2 text-center">{item.qty}</td>
-                                        <td className="py-2 text-right">₹{item.price}</td>
-                                        <td className="py-2 text-right font-semibold">
-                                            ₹{item.price * item.qty}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {items.map((item) => {
+                                    const price = parseFloat(item.price);
+                                    // const qty = item.qty;
+                                    const discountPercent = parseFloat(item.discount || 0);
+                                    const taxPercent = parseFloat(item.tax || 0);
+
+                                    const discountAmount = price * (discountPercent / 100);
+                                    const priceAfterDiscount = price - discountAmount;
+                                    const taxAmount = priceAfterDiscount * (taxPercent / 100);
+                                    const finalPrice = priceAfterDiscount + taxAmount;
+
+                                    return (
+                                        <tr key={item.id || item.foodId} className="border-b border-gray-100 last:border-0 align-top">
+                                            <td className="py-2 font-medium font-heading truncate max-w-[120px] capitalize">
+                                                {item.name}
+                                            </td>
+                                            <td className="py-2 text-center">{item.qty}</td>
+                                            <td className="py-2 text-right">₹{item.price}</td>
+                                            <td className="py-2 text-right text-xs">
+                                                {discountPercent > 0 && <div className="text-red-500">{discountPercent}%</div>}
+                                            </td>
+                                            <td className="py-2 text-right text-xs">
+                                                {taxPercent > 0 ? (
+                                                    <div className="text-gray-600">{taxPercent}%</div>
+                                                ) : (
+                                                    <div className="text-gray-400">0%</div>
+                                                )}
+                                            </td>
+                                            <td className="py-2 text-right font-semibold">
+                                                ₹{(finalPrice * item.qty).toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -110,8 +177,14 @@ const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate, del
                             <span>Subtotal</span>
                             <span>₹{subtotal.toFixed(2)}</span>
                         </div>
+                        {discountVal > 0 && (
+                            <div className="flex justify-between text-green-600">
+                                <span>Discount</span>
+                                <span>- ₹{discountVal.toFixed(2)}</span>
+                            </div>
+                        )}
                         <div className="flex justify-between">
-                            <span>Tax {includeTax ? '(18%)' : '(0%)'}</span>
+                            <span>Tax</span>
                             <span>₹{tax.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
@@ -137,16 +210,21 @@ const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate, del
                 {/* Actions (Hidden in Print) */}
                 <div className="bg-gray-50 p-4 border-t border-gray-100 flex gap-3 print:hidden rounded-b-xl sticky bottom-0 z-10 shrink-0">
                     <div className="flex items-center gap-2 flex-1">
-                        <input
-                            type="checkbox"
-                            id="tax-toggle"
-                            checked={includeTax}
-                            onChange={() => setIncludeTax(!includeTax)}
-                            className="w-4 h-4 text-gray-800 rounded focus:ring-gray-500 border-gray-300"
-                        />
-                        <label htmlFor="tax-toggle" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
-                            Add Tax (18%)
-                        </label>
+                        {isAdmin && (
+                            <>
+                                <input
+                                    type="checkbox"
+                                    id="tax-toggle"
+                                    checked={isTaxApplied}
+                                    onChange={handleTaxToggle}
+                                    disabled={isUpdatingTax}
+                                    className="w-4 h-4 text-gray-800 rounded focus:ring-gray-500 border-gray-300 disabled:opacity-50"
+                                />
+                                <label htmlFor="tax-toggle" className="text-xs text-gray-600 font-medium cursor-pointer select-none">
+                                    {isUpdatingTax ? 'Updating...' : 'Add Tax (2%)'}
+                                </label>
+                            </>
+                        )}
                     </div>
 
                     {isAdmin ? (

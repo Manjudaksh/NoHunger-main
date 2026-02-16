@@ -14,6 +14,8 @@ const EditItem = () => {
     const [itemName, setItemName] = useState("");
     const [itemDesc, setItemDesc] = useState("");
     const [itemPrice, setItemPrice] = useState("");
+    const [discount, setDiscount] = useState("");
+    const [tax, setTax] = useState("");
     const [itemImage, setItemImage] = useState(null);
     const [preview, setPreview] = useState(null);
     const [selectedCategoryId, setSelectedCategoryId] = useState("");
@@ -49,6 +51,8 @@ const EditItem = () => {
             setItemName(item.name);
             setItemDesc(item.description);
             setItemPrice(item.price);
+            setDiscount(item.discount || 0);
+            setTax(item.tax || 0);
             setSelectedCategoryId(item.categoryId?._id || item.categoryId);
             setActive(item.active !== undefined ? item.active : true);
             if (item.image) {
@@ -81,6 +85,8 @@ const EditItem = () => {
         formData.append("name", itemName);
         formData.append("description", itemDesc);
         formData.append("price", itemPrice);
+        formData.append("discount", discount);
+        formData.append("tax", tax);
         formData.append("categoryId", selectedCategoryId);
         formData.append("active", active);
         if (itemImage) formData.append("image", itemImage);
@@ -154,6 +160,27 @@ const EditItem = () => {
                                 value={itemPrice}
                                 onChange={(e) => setItemPrice(e.target.value)}
                                 className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                                placeholder="e.g. 199"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">Discount (%)</label>
+                            <input
+                                type="number"
+                                value={discount}
+                                onChange={(e) => setDiscount(e.target.value)}
+                                className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                                placeholder="e.g. 10"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">Tax (%)</label>
+                            <input
+                                type="number"
+                                value={tax}
+                                onChange={(e) => setTax(e.target.value)}
+                                className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                                placeholder="e.g. 5"
                             />
                         </div>
                     </div>

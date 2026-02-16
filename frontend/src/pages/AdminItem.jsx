@@ -104,14 +104,14 @@ const AdminItem = () => {
                 <div className='bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden'>
                     <div className="overflow-x-auto">
                         <table className='w-full text-left border-collapse'>
-                            <thead className='bg-gray-50/50 border-b border-gray-200'>
+                            <thead className='bg-gray-50 border-b border-gray-200 text-gray-500 text-xs font-semibold uppercase tracking-wider'>
                                 <tr>
-                                    <th className='p-4 text-xs font-bold font-heading text-gray-500 uppercase tracking-wider w-24'>Image</th>
-                                    <th className='p-4 text-xs font-bold text-gray-500 uppercase tracking-wider'>Name</th>
-                                    <th className='p-4 text-xs font-bold text-gray-500 uppercase tracking-wider'>Category</th>
-                                    <th className='p-4 text-xs font-bold text-gray-500 uppercase tracking-wider'>Price</th>
-                                    <th className='p-4 text-xs font-bold text-gray-500 uppercase tracking-wider'>Description</th>
-                                    <th className='p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right'>Actions</th>
+                                    <th className='px-3 py-2 text-left w-16'>Image</th>
+                                    <th className='px-3 py-2 text-left'>Name</th>
+                                    <th className='px-3 py-2 text-left'>Category</th>
+                                    <th className='px-3 py-2 text-left'>Price</th>
+                                    <th className='px-3 py-2 text-left'>Description</th>
+                                    <th className='px-3 py-2 text-right'>Actions</th>
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-gray-100'>
@@ -122,9 +122,9 @@ const AdminItem = () => {
                                 ) : (
                                     <>
                                         {foods.map((food) => (
-                                            <tr key={food._id} className='hover:bg-orange-50/30 transition-colors duration-200 group'>
-                                                <td className='p-4'>
-                                                    <div className="w-12 h-12 overflow-hidden rounded-lg shadow-sm border border-gray-200 shrink-0">
+                                            <tr key={food._id} className='hover:bg-gray-50 transition-colors duration-200 group border-b border-gray-100 last:border-0'>
+                                                <td className='px-3 py-2'>
+                                                    <div className="w-10 h-10 overflow-hidden rounded-md shadow-sm border border-gray-200 shrink-0">
                                                         {food.image ? (
                                                             <img
                                                                 src={`${server}/${food.image}`}
@@ -132,41 +132,41 @@ const AdminItem = () => {
                                                                 className="w-full h-full object-cover"
                                                             />
                                                         ) : (
-                                                            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                                                            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-[10px]">
                                                                 No Img
                                                             </div>
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className='p-4'>
-                                                    <p className="font-semibold font-heading text-gray-800 text-sm capitalize">{food.name}</p>
+                                                <td className='px-3 py-2'>
+                                                    <p className="font-semibold text-gray-800 text-sm capitalize">{food.name}</p>
                                                 </td>
-                                                <td className='p-4'>
-                                                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded border border-blue-200">
+                                                <td className='px-3 py-2'>
+                                                    <span className="bg-blue-50 text-blue-700 text-[10px] font-semibold px-2 py-0.5 rounded border border-blue-100">
                                                         {food.categoryId?.name || 'Uncategorized'}
                                                     </span>
                                                 </td>
-                                                <td className='p-4'>
-                                                    <p className="font-bold font-heading text-gray-800 text-sm">₹{food.price}</p>
+                                                <td className='px-3 py-2'>
+                                                    <p className="font-bold text-gray-800 text-sm">₹{food.price}</p>
                                                 </td>
-                                                <td className='p-4'>
-                                                    <p className="text-gray-500 text-sm truncate max-w-xs">{food.description || <span className="italic text-gray-300">No description</span>}</p>
+                                                <td className='px-3 py-2'>
+                                                    <p className="text-gray-500 text-xs truncate max-w-xs">{food.description || <span className="italic text-gray-300">No description</span>}</p>
                                                 </td>
-                                                <td className='p-4 text-right'>
+                                                <td className='px-3 py-2 text-right'>
                                                     <div className='flex justify-end gap-2 text-gray-400'>
                                                         <button
                                                             onClick={() => handleEditClick(food._id)}
-                                                            className='p-2 hover:bg-blue-100 hover:text-blue-600 rounded-full transition-colors'
+                                                            className='p-1.5 hover:bg-blue-100 hover:text-blue-600 rounded-lg transition-colors'
                                                             title="Edit Item"
                                                         >
-                                                            <FaEdit size={16} />
+                                                            <FaEdit size={14} />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteClick(food._id)}
-                                                            className='p-2 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors'
+                                                            className='p-1.5 hover:bg-red-100 hover:text-red-600 rounded-lg transition-colors'
                                                             title="Delete Item"
                                                         >
-                                                            <FaTrash size={16} />
+                                                            <FaTrash size={14} />
                                                         </button>
                                                     </div>
                                                 </td>

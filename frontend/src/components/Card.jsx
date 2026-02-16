@@ -7,7 +7,7 @@ import { FaShoppingCart } from 'react-icons/fa';
 
 import { server } from '../helpers/api';
 
-const Card = ({ name = "Unknown Item", image, id, price, type = "veg" }) => {
+const Card = ({ name = "Unknown Item", image, id, price, type = "veg", discount = 0, tax = 0 }) => {
   let dispatch = useDispatch();
 
   return (
@@ -39,13 +39,24 @@ const Card = ({ name = "Unknown Item", image, id, price, type = "veg" }) => {
         <div className='flex items-center justify-between mt-2 pt-3 border-t border-gray-100'>
           <div className='flex flex-col'>
             <span className='text-xs text-gray-400 font-medium font-heading uppercase'>Price</span>
-            <span className='font-bold text-xl text-gray-900 font-heading'>₹{price || 0}</span>
+            <div className="flex items-center gap-2">
+              <span className='font-bold text-xl text-gray-900 font-heading'>
+                ₹{discount > 0 ? (price - (price * discount / 100)).toFixed(0) : price}
+              </span>
+              {discount > 0 && (
+                <span className="text-xs text-gray-400 line-through">₹{price}</span>
+              )}
+            </div>
+            <div className="flex gap-2 text-[10px] font-bold mt-1">
+              {discount > 0 && <span className="text-green-600 bg-green-50 px-1 rounded">-{discount}% OFF</span>}
+              {tax > 0 && <span className="text-orange-600 bg-orange-50 px-1 rounded">+{tax}% Tax</span>}
+            </div>
           </div>
 
           <button
             className="bg-green-600 hover:bg-green-700 text-white rounded-full p-3 shadow-lg hover:shadow-green-200 transition-all active:scale-95 flex items-center justify-center group"
             onClick={() => {
-              dispatch(AddItem({ id: id, name: name, price: price, image: image, qty: 1 }));
+              dispatch(AddItem({ id: id, name: name, price: price, image: image, qty: 1, discount: discount, tax: tax }));
               toast.success(`${name} Added to Cart!`)
             }}
           >

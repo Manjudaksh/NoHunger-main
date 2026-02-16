@@ -13,3 +13,20 @@ api.interceptors.request.use((config) => {
     }
     return config;
 });
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            // Token expired or invalid
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+
+            // Only redirect if not already on login page to avoid loops if login page itself makes 401 calls (unlikely)
+            if (!window.location.pathname.includes("/admin-secret-login")) {
+                window.location.href = "/admin-secret-login";
+            }
+        }
+        return Promise.reject(error);
+    }
+);

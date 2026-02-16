@@ -17,6 +17,25 @@ const Home = () => {
 
   const [showBill, setShowBill] = useState(false);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12; // 4 rows * 3 columns = 12 items
+
+  // Reset page when category or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, input]);
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = cate.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(cate.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   // User details for order
   const [userDetails, setUserDetails] = useState({
     name: "",
@@ -30,18 +49,29 @@ const Home = () => {
 
 
 
-  let subtotal = items.reduce(
-    (total, item) => total + item.qty * item.price,
-    0
-  );
-  let deliveryFee = 20;
+  // Calculate totals based on new formula: (Price - Disc) + Tax
+  const cartCalculation = items.reduce((acc, item) => {
+    const price = parseFloat(item.price) || 0;
+    const qty = parseInt(item.qty) || 1;
+    const discountPercent = parseFloat(item.discount || 0);
+    const taxPercent = parseFloat(item.tax || 0);
 
-  // Tax calculation moved here to consistent with Bill
-  // Note: Bill has its own toggle, but for order saving, we might assume tax included or not.
-  // user requested "Bill" component logic has dynamic tax.
-  // For saving the order, we will save the calculated total including delivery.
-  // Simple total for now:
-  let total = subtotal + deliveryFee;
+    const discountAmount = price * (discountPercent / 100);
+    const priceAfterDiscount = price - discountAmount;
+    const taxAmount = priceAfterDiscount * (taxPercent / 100);
+    const finalPrice = priceAfterDiscount + taxAmount;
+
+    acc.subtotal += price * qty;
+    acc.discount += discountAmount * qty;
+    acc.tax += taxAmount * qty;
+    acc.total += finalPrice * qty;
+
+    return acc;
+  }, { subtotal: 0, discount: 0, tax: 0, total: 0 });
+
+  let subtotal = cartCalculation.subtotal;
+  let deliveryFee = 20;
+  let total = cartCalculation.total + deliveryFee;
 
   const [checkoutOrder, setCheckoutOrder] = useState(null);
 
@@ -60,7 +90,9 @@ const Home = () => {
           name: item.name,
           price: item.price,
           qty: item.qty,
-          image: item.image
+          image: item.image,
+          discount: item.discount,
+          tax: item.tax
         })),
         totalAmount: total
       };
@@ -71,12 +103,8 @@ const Home = () => {
         toast.success("Order Placed Successfully!");
 
         // Save the placed order details to show in Bill
-        setCheckoutOrder({
-          items: items,
-          user: userDetails,
-          totalAmount: total,
-          createdAt: new Date().toISOString()
-        });
+        // Use the actual order from backend response to ensure consistency (tax, totals, ids)
+        setCheckoutOrder(response.data.order);
 
         // Clear cart and inputs
         dispatch(clearCart());
@@ -112,6 +140,19 @@ const Home = () => {
         </div>
 
         <div className="flex md:flex-col gap-3 min-w-max md:min-w-0">
+
+          <div
+            className={`
+                px-4 py-3 md:py-4 rounded-xl flex md:flex-row items-center gap-3 cursor-pointer transition-all duration-200 group
+                ${activeCategory === "All" ? 'bg-green-600 text-white shadow-lg shadow-green-200 scale-105' : 'bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-700'}
+            `}
+            onClick={() => setActiveCategory("All")}
+          >
+            <div className={`w-8 h-8 rounded-md flex items-center justify-center overflow-hidden ${activeCategory === "All" ? 'ring-2 ring-white/30 bg-white' : 'bg-white shadow-sm'}`}>
+              <FaUtensils size={14} className={activeCategory === "All" ? "text-green-600" : "text-gray-400"} />
+            </div>
+            <span className="font-semibold font-heading text-sm whitespace-nowrap capitalize">All</span>
+          </div>
 
           {categories.map((item) => {
             return (
@@ -153,8 +194,8 @@ const Home = () => {
 
           {/* Food Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12 justify-items-center">
-            {cate.length > 0 ? (
-              cate.map((item) => (
+            {currentItems.length > 0 ? (
+              currentItems.map((item) => (
                 <Card
                   key={item._id}
                   name={item.name}
@@ -162,6 +203,8 @@ const Home = () => {
                   price={item.price}
                   type={item.description} // Assuming description is what we want to show, or maybe category name?
                   id={item._id}
+                  discount={item.discount}
+                  tax={item.tax}
                 />
               ))
             ) : (
@@ -172,6 +215,54 @@ const Home = () => {
               </div>
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {cate.length > itemsPerPage && (
+            <div className="flex justify-center items-center mt-12 gap-4">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`
+                  px-4 py-2 rounded-lg border font-medium transition-colors
+                  ${currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:text-green-600'}
+                `}
+              >
+                Previous
+              </button>
+
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                  <button
+                    key={number}
+                    onClick={() => handlePageChange(number)}
+                    className={`
+                      w-10 h-10 rounded-lg flex items-center justify-center font-bold transition-all
+                      ${currentPage === number
+                        ? 'bg-green-600 text-white shadow-lg shadow-green-200 scale-105'
+                        : 'bg-white text-gray-600 border border-gray-200 hover:border-green-500 hover:text-green-600'}
+                    `}
+                  >
+                    {number}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`
+                  px-4 py-2 rounded-lg border font-medium transition-colors
+                  ${currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:text-green-600'}
+                `}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -211,6 +302,8 @@ const Home = () => {
                   id={item.id}
                   image={item.image}
                   qty={item.qty}
+                  discount={item.discount}
+                  tax={item.tax}
                 />
               ))
             ) : (
@@ -283,7 +376,15 @@ const Home = () => {
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm text-gray-600">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span className="font-medium">₹ {subtotal}</span>
+                    <span className="font-medium">₹ {subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount</span>
+                    <span className="font-medium">- ₹ {cartCalculation.discount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Tax</span>
+                    <span className="font-medium">₹ {cartCalculation.tax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Delivery Fee</span>

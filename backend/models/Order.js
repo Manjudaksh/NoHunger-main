@@ -12,9 +12,34 @@ const OrderSchema = new mongoose.Schema({
             name: { type: String, required: true },
             price: { type: Number, required: true },
             qty: { type: Number, required: true },
-            image: { type: String }
+            image: { type: String },
+            discount: { type: Number, default: 0 },
+            tax: { type: Number, default: 0 }
         }
     ],
+    subtotal: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    discountAmount: {
+        type: Number,
+        default: 0
+    },
+    taxAmount: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    deliveryFee: {
+        type: Number,
+        required: true,
+        default: 0
+    },
+    isTaxApplied: {
+        type: Boolean,
+        default: false
+    },
     totalAmount: {
         type: Number,
         required: true

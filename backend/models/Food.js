@@ -14,6 +14,14 @@ const FoodSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    discount: {
+        type: Number,
+        default: 0
+    },
+    tax: {
+        type: Number,
+        default: 0
+    },
     image: {
         type: String,
         // Optional image

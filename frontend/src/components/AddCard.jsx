@@ -1,14 +1,11 @@
 import React from "react";
-import image1 from "../assets/image1.jpg";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { useDispatch } from "react-redux";
-import { RemoveItem } from "../redux/cartSlice";
-import { IncrementQty } from "../redux/cartSlice";
-import { DecrementQty } from "../redux/cartSlice";
+import { RemoveItem, IncrementQty, DecrementQty } from "../redux/cartSlice";
 
 import { server } from "../helpers/api";
 
-const AddCard = ({ name, id, price, image, qty }) => {
+const AddCard = ({ name, id, price, image, qty, discount, tax }) => {
 
   let dispatch = useDispatch()
   return (
@@ -30,9 +27,15 @@ const AddCard = ({ name, id, price, image, qty }) => {
           </div>
         </div>
       </div>
-      <div className="flex flex-col justify-start items-end gap-6">
+      <div className="flex flex-col justify-start items-end gap-1">
         <span className="text-lg text-[#1c1c1c] font-semibold font-heading">₹ {price}/-</span>
-        <RiDeleteBin6Line className="text-2xl text-red-700 hover:text-red-600 cursor-pointer" onClick={() => dispatch(RemoveItem(id))} />
+        {(discount > 0 || tax > 0) && (
+          <div className="text-[10px] text-gray-400 flex flex-col items-end">
+            {discount > 0 && <span>Disc: {discount}%</span>}
+            {tax > 0 && <span>Tax: {tax}%</span>}
+          </div>
+        )}
+        <RiDeleteBin6Line className="text-2xl text-red-700 hover:text-red-600 cursor-pointer mt-2" onClick={() => dispatch(RemoveItem(id))} />
 
       </div>
     </div>

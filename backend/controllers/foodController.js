@@ -7,12 +7,14 @@ const path = require('path');
 // @access  Private/Admin
 exports.createFood = async (req, res) => {
     try {
-        const { name, description, price, categoryId, active } = req.body;
+        const { name, description, price, categoryId, active, discount, tax } = req.body;
 
         const food = await Food.create({
             name,
             description,
             price,
+            discount: discount || 0,
+            tax: tax || 0,
             categoryId,
             active,
             image: req.file ? req.file.path : ''
@@ -88,7 +90,7 @@ exports.getFoodById = async (req, res) => {
 // @access  Private/Admin
 exports.updateFood = async (req, res) => {
     try {
-        const { name, description, price, categoryId, active } = req.body;
+        const { name, description, price, categoryId, active, discount, tax } = req.body;
         let food = await Food.findById(req.params.id);
 
         if (!food) {
@@ -109,6 +111,8 @@ exports.updateFood = async (req, res) => {
         food.name = name || food.name;
         food.description = description || food.description;
         food.price = price || food.price;
+        food.discount = discount !== undefined ? discount : food.discount;
+        food.tax = tax !== undefined ? tax : food.tax;
         food.categoryId = categoryId || food.categoryId;
         if (active !== undefined) food.active = active;
         food.image = imagePath;
