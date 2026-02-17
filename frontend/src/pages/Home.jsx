@@ -70,7 +70,7 @@ const Home = () => {
   }, { subtotal: 0, discount: 0, tax: 0, total: 0 });
 
   let subtotal = cartCalculation.subtotal;
-  let deliveryFee = 20;
+  let deliveryFee = 0; // 20;
   let total = cartCalculation.total + deliveryFee;
 
   const [checkoutOrder, setCheckoutOrder] = useState(null);
@@ -375,25 +375,33 @@ const Home = () => {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm text-gray-600">
                   <div className="flex justify-between">
-                    <span>Subtotal</span>
+                    <span>Total</span>
                     <span className="font-medium">₹ {subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between text-red-500">
                     <span>Discount</span>
                     <span className="font-medium">- ₹ {cartCalculation.discount.toFixed(2)}</span>
                   </div>
+
+                  <div className="h-px bg-gray-200 border-dashed my-1"></div>
+
+                  <div className="flex justify-between font-semibold text-gray-700">
+                    <span>Subtotal</span>
+                    <span>₹ {(subtotal - cartCalculation.discount).toFixed(2)}</span>
+                  </div>
+
                   <div className="flex justify-between">
                     <span>Tax</span>
                     <span className="font-medium">₹ {cartCalculation.tax.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between hidden">
                     <span>Delivery Fee</span>
                     <span className="font-medium">₹ {deliveryFee}</span>
                   </div>
                   <div className="h-px bg-gray-200 my-1"></div>
                   <div className="flex justify-between text-base font-bold text-gray-800">
-                    <span>Grand Total</span>
-                    <span>₹ {total}</span>
+                    <span>You Pay</span>
+                    <span>₹ {(subtotal - cartCalculation.discount + cartCalculation.tax).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -438,7 +446,7 @@ const Home = () => {
           items={checkoutOrder ? checkoutOrder.items : items}
           customerDetails={checkoutOrder ? checkoutOrder.user : userDetails}
           orderDate={checkoutOrder ? checkoutOrder.createdAt : null}
-          deliveryFee={20}
+          deliveryFee={deliveryFee}
           onClose={() => {
             setShowBill(false);
             // Optional: reset checkoutOrder if you want only one-time view after success, 

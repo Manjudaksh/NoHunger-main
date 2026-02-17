@@ -83,6 +83,12 @@ const AdminBill = () => {
         message: ""
     });
 
+    // Confirmation State for Discount
+    const [confirmDiscount, setConfirmDiscount] = useState({
+        isOpen: false,
+        amount: 0
+    });
+
     // Handle Status Update
     const [updatingStatus, setUpdatingStatus] = useState({});
 
@@ -126,6 +132,37 @@ const AdminBill = () => {
         }
     };
 
+    const initiateApplyDiscount = (amount) => {
+        setConfirmDiscount({
+            isOpen: true,
+            amount: amount
+        });
+    };
+
+    const performApplyDiscount = async () => {
+        if (!viewBill) return;
+
+        try {
+            // Updated endpoint to match OrderRoutes and simple percentage logic
+            const { data } = await api.put(`/orders/${viewBill._id}/discount`, {
+                adminDiscountPercentage: confirmDiscount.amount
+            });
+
+            // Update local state
+            setViewBill(data.order);
+            setData(prevOrders =>
+                prevOrders.map(o =>
+                    o._id === viewBill._id ? data.order : o
+                )
+            );
+            toast.success("Discount applied successfully");
+            setConfirmDiscount({ ...confirmDiscount, isOpen: false });
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.message || "Failed to apply discount");
+        }
+    };
+
     // Handle Tax Toggle (Passed to Bill Component)
     const handleTaxToggle = async (newTaxStatus) => {
         if (!viewBill) return;
@@ -146,6 +183,29 @@ const AdminBill = () => {
         } catch (error) {
             console.error(error);
             toast.error("Failed to update tax status");
+        }
+    };
+
+    // Handle Multi-Stage Bill Update
+    const onUpdateBillDetails = async (billDetails) => {
+        if (!viewBill) return;
+
+        try {
+            const { data } = await api.put(`/orders/${viewBill._id}/bill`, billDetails);
+
+            // Update local state
+            setViewBill(data.order);
+
+            // Update list
+            setData(prevOrders =>
+                prevOrders.map(o =>
+                    o._id === viewBill._id ? data.order : o
+                )
+            );
+            toast.success("Bill updated successfully");
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.message || "Failed to update bill");
         }
     };
 
@@ -227,7 +287,7 @@ const AdminBill = () => {
                                         <td className="px-3 py-2 font-medium text-gray-800 whitespace-nowrap text-xs">{order.user?.name || "Unknown"}</td>
                                         <td className="px-3 py-2 text-gray-600 whitespace-nowrap text-xs">{order.user?.phone || "N/A"}</td>
                                         <td className="px-3 py-2 text-gray-600 max-w-[150px] truncate text-xs" title={order.user?.email || ""}>{order.user?.email || "N/A"}</td>
-                                        <td className="px-3 py-2 font-bold text-gray-800 text-right text-xs">₹{order.totalAmount}</td>
+                                        <td className="px-3 py-2 font-bold text-gray-800 text-right text-xs">₹{order.totalAmount.toFixed(2)}</td>
 
                                         {/* Bill Button */}
                                         <td className="px-3 py-2 text-center">
@@ -292,11 +352,12 @@ const AdminBill = () => {
                     items={viewBill.items}
                     customerDetails={viewBill.user}
                     orderDate={viewBill.createdAt}
-                    deliveryFee={viewBill.deliveryFee || 20} // Use stored delivery fee or default
+                    deliveryFee={viewBill.deliveryFee !== undefined ? viewBill.deliveryFee : 0} // Use stored delivery fee or default to 0
                     onClose={() => setViewBill(null)}
                     isAdmin={true}
                     orderData={viewBill} // Pass full order object
-                    onTaxToggle={handleTaxToggle} // Pass handler
+                    onTaxToggle={handleTaxToggle}
+                    onApplyDiscount={initiateApplyDiscount}
                 />
             )}
 
@@ -309,6 +370,18 @@ const AdminBill = () => {
                 isDestructive={confirmAction.newStatus === 2} // Unpaid is destructive-ish? Or maybe Paid is definitive. Let's make it standard (blue). Actually user said "modern, styled". Blue is fine.
                 confirmText="Yes, Change Status"
             />
+
+            <ConfirmDialog
+                isOpen={confirmDiscount.isOpen}
+                onClose={() => setConfirmDiscount({ ...confirmDiscount, isOpen: false })}
+                onConfirm={performApplyDiscount}
+                title="Apply Admin Discount"
+                message={`Are you sure you want to apply a ${confirmDiscount.amount}% discount? This will recalculate the tax.`}
+                isDestructive={true}
+                confirmText="Apply Discount"
+            />
+
+
         </div>
     );
 };

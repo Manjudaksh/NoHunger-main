@@ -34,7 +34,7 @@ exports.createOrder = async (req, res) => {
         });
 
         // Fixed delivery fee for now
-        const deliveryFee = 20;
+        const deliveryFee = 0; // 20;
 
         const totalAmount = (subtotal - totalDiscount) + totalTax + deliveryFee;
 
@@ -106,24 +106,116 @@ exports.toggleOrderTax = async (req, res) => {
             return res.status(404).json({ message: "Order not found" });
         }
 
-        // Recalculate based on current items and stored subtotal
-        // We can trust stored subtotal or recalculate it. Let's recalculate for safety or trust stored.
-        // Trust stored subtotal for now as items don't change financially        
         let newTaxAmount = 0;
+
         if (isTaxApplied) {
-            newTaxAmount = order.subtotal * 0.02; // 2% Tax
+            // Calculate Base Tax (Tax on items after item discounts)
+            // This is the full tax amount based on item tax %
+            newTaxAmount = order.items.reduce((acc, item) => {
+                const price = parseFloat(item.price);
+                const qty = parseInt(item.qty);
+                const discountPercent = parseFloat(item.discount || 0);
+                const taxPercent = parseFloat(item.tax || 0);
+
+                const discountAmount = price * (discountPercent / 100);
+                const priceAfterDiscount = price - discountAmount;
+                const itemTaxAmount = priceAfterDiscount * (taxPercent / 100);
+
+                return acc + (itemTaxAmount * qty);
+            }, 0);
         }
 
-        const newTotalAmount = order.subtotal + newTaxAmount + order.deliveryFee;
+        // Order Total (Gross - Item Disc)
+        const orderTotal = order.subtotal - order.discountAmount;
+
+        // Calculate "Pay You Amount" (Amount before Admin Discount)
+        // Pay You Amount = (Subtotal - Item Discount) + Tax + Delivery
+        const payYouAmount = orderTotal + newTaxAmount + (order.deliveryFee || 0);
+
+        // Recalculate Admin Discount Amount based on new Pay You Amount
+        // Admin Discount is a percentage of Pay You Amount
+        const adminDiscountPercentage = order.adminDiscountPercentage || 0;
+        const adminDiscountAmount = payYouAmount * (adminDiscountPercentage / 100);
+
+        // Final Total Amount = Pay You Amount - Admin Discount
+        const newTotalAmount = payYouAmount - adminDiscountAmount;
 
         // Update fields
         order.isTaxApplied = isTaxApplied;
         order.taxAmount = newTaxAmount;
+        order.adminDiscount = adminDiscountAmount; // Update amount as it depends on Pay You Amount
         order.totalAmount = newTotalAmount;
 
         await order.save();
 
         res.status(200).json({ message: `Tax ${isTaxApplied ? 'enabled' : 'disabled'}`, order });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Apply Admin Discount
+exports.applyAdminDiscount = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { adminDiscountPercentage } = req.body; // Should be a number 0-100
+
+        const order = await Order.findById(id);
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        // Validate percentage
+        if (adminDiscountPercentage < 0 || adminDiscountPercentage > 100) {
+            return res.status(400).json({ message: "Discount percentage must be between 0 and 100" });
+        }
+
+        // 1. Calculate Order Total (Gross - Item Discounts)
+        const orderTotal = order.subtotal - order.discountAmount;
+
+        // 2. Calculate Tax (Existing Tax Amount logic - remains same as it only depends on items)
+        // However, we need to ensure we have the correct tax amount. 
+        // If tax is applied, we re-calculate it to satisfy "Tax on Subtotal" rule strictly or trust stored value.
+        // Let's recalculate to be safe and consistent with toggleOrderTax.
+        let currentTaxAmount = 0;
+        if (order.isTaxApplied) {
+            currentTaxAmount = order.items.reduce((acc, item) => {
+                const price = parseFloat(item.price);
+                const qty = parseInt(item.qty);
+                const discountPercent = parseFloat(item.discount || 0);
+                const taxPercent = parseFloat(item.tax || 0);
+
+                const discountAmount = price * (discountPercent / 100);
+                const priceAfterDiscount = price - discountAmount;
+                const itemTaxAmount = priceAfterDiscount * (taxPercent / 100);
+
+                return acc + (itemTaxAmount * qty);
+            }, 0);
+        } else {
+            currentTaxAmount = 0;
+        }
+
+        // 3. Calculate Pay You Amount
+        // Pay You Amount = (Order Total) + Tax + Delivery
+        const payYouAmount = orderTotal + currentTaxAmount + (order.deliveryFee || 0);
+
+        // 4. Calculate Admin Discount Amount
+        // Admin Discount = Pay You Amount * (Percentage / 100)
+        const adminDiscountAmount = payYouAmount * (adminDiscountPercentage / 100);
+
+        // 5. Final Total
+        // Total = Pay You Amount - Admin Discount
+        const newTotalAmount = payYouAmount - adminDiscountAmount;
+
+        // Save
+        order.adminDiscountPercentage = adminDiscountPercentage;
+        order.adminDiscount = adminDiscountAmount;
+        order.taxAmount = currentTaxAmount; // Ensure tax is correct (should be same unless we had the old reduction logic applied)
+        order.totalAmount = newTotalAmount;
+
+        await order.save();
+
+        res.status(200).json({ message: "Admin discount applied", order });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -146,6 +238,66 @@ exports.updateOrderStatus = async (req, res) => {
         }
 
         res.status(200).json({ message: "Order status updated", order });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Update Multi-Stage Bill Details (Admin Only)
+exports.updateOrderBill = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { defaultDiscountPercentage, taxPercentage, extraDiscountPercentage } = req.body;
+
+        const order = await Order.findById(id);
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        // 1. Gross Total (Sum of Item Prices * Qty, minus Item Discounts) - base for calculation
+        // Ensure values are numbers to prevent NaN
+        const subtotal = order.subtotal || 0;
+        const discountAmount = order.discountAmount || 0;
+        const orderTotal = subtotal - discountAmount;
+
+        // 2. Default Discount
+        const defDiscPercent = parseFloat(defaultDiscountPercentage || 0);
+        const defDiscAmount = orderTotal * (defDiscPercent / 100);
+        const amountAfterDiscount = orderTotal - defDiscAmount;
+
+        // 3. Tax
+        // "Calculate tax on the discounted amount (after default discount)."
+        const taxPercent = parseFloat(taxPercentage || 0);
+        const taxAmount = amountAfterDiscount * (taxPercent / 100);
+        const amountWithTax = amountAfterDiscount + taxAmount;
+
+        // 4. Extra Admin Discount
+        // "Apply on Amount With Tax."
+        const extraDiscPercent = parseFloat(extraDiscountPercentage || 0);
+        // "Result -> Final Payable Amount ('You Pay')"
+        // Formula: Amount With Tax - (Amount With Tax * Extra%)?
+        // Yes: "Admin Extra Discount (%) ... Apply on Amount With Tax"
+        const extraDiscAmount = amountWithTax * (extraDiscPercent / 100);
+        const finalPayable = amountWithTax - extraDiscAmount;
+
+        // Update Fields
+        order.defaultDiscountPercentage = defDiscPercent;
+        order.defaultDiscountAmount = defDiscAmount;
+        order.amountAfterDiscount = amountAfterDiscount;
+
+        order.taxPercentage = taxPercent;
+        order.taxAmount = taxAmount;
+        order.amountWithTax = amountWithTax;
+
+        order.extraDiscountPercentage = extraDiscPercent;
+        order.extraDiscountAmount = extraDiscAmount;
+
+        order.totalAmount = finalPayable + (order.deliveryFee || 0);
+
+        await order.save();
+
+        res.status(200).json({ message: "Bill updated successfully", order });
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -26,11 +26,27 @@ const OrderSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    taxAmount: {
+    adminDiscount: {
         type: Number,
-        required: true,
         default: 0
     },
+    adminDiscountPercentage: {
+        type: Number,
+        default: 0
+    },
+    taxAmount: {
+        type: Number,
+        default: 0
+    },
+    // Multi-stage billing fields
+    defaultDiscountPercentage: { type: Number, default: 0 },
+    defaultDiscountAmount: { type: Number, default: 0 },
+    taxPercentage: { type: Number, default: 0 },
+    extraDiscountPercentage: { type: Number, default: 0 },
+    extraDiscountAmount: { type: Number, default: 0 },
+    amountAfterDiscount: { type: Number, default: 0 },
+    amountWithTax: { type: Number, default: 0 },
+
     deliveryFee: {
         type: Number,
         required: true,
