@@ -8,7 +8,6 @@ backend/node_modules/
 # =========================
 # Environment files (IMPORTANT)
 # =========================
-.env
 backend/.env
 frontend/.env
 
@@ -39,3 +38,4 @@ Thumbs.db
 # Uploads (optional if storing images)
 # =========================
 backend/uploads/
+config.bat
