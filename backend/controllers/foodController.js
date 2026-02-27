@@ -31,29 +31,53 @@ exports.createFood = async (req, res) => {
 // @access  Public
 const paginate = require('../utils/pagination');
 
+const Category = require('../models/Category');
+
 // @desc    Get all food items
 // @route   GET /api/foods
 // @access  Public
 exports.getAllFoods = async (req, res) => {
     try {
         const { skip, limit, getMetadata } = paginate(req.query);
+        const { search, category } = req.query;
+
+        let query = {};
+
+        // 1. Build Search Query (regex for partial, case-insensitive match on name)
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
+
+        // 2. Build Category Query
+        if (category && category !== "All") {
+            // Look up the category by name to get its ID, as Food uses categoryId
+            const categoryDoc = await Category.findOne({ name: category });
+
+            if (categoryDoc) {
+                query.categoryId = categoryDoc._id;
+            } else {
+                // If a category is specified but not found, immediately return empty results
+                return res.status(200).json([]);
+            }
+        }
 
         if (req.query.page || req.query.limit) {
-            const foods = await Food.find()
+            const foods = await Food.find(query)
                 .populate('categoryId', 'name')
                 .skip(skip)
                 .limit(limit);
-            const total = await Food.countDocuments();
+            const total = await Food.countDocuments(query);
 
             res.status(200).json({
                 foods, // Changed key to match category controller's style (plural of resource) or standard 'data'
                 ...getMetadata(total)
             });
         } else {
-            const foods = await Food.find().populate('categoryId', 'name');
+            const foods = await Food.find(query).populate('categoryId', 'name');
             res.status(200).json(foods);
         }
     } catch (error) {
+        console.error("Error in getAllFoods:", error);
         res.status(500).json({ message: error.message });
     }
 };
