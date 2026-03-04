@@ -13,7 +13,6 @@ const AdminCategory = () => {
     const { admin } = useContext(dataContext);
     const navigate = useNavigate();
 
-    // Use custom pagination hook
     const {
         data: categories,
         loading,
@@ -23,7 +22,9 @@ const AdminCategory = () => {
         nextPage,
         prevPage,
         jumpToPage,
-        refresh
+        refresh,
+        limit,
+        setLimit
     } = usePagination('/categories', 10);
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -93,7 +94,7 @@ const AdminCategory = () => {
                 <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8'>
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => navigate(-1)}
+                            onClick={() => navigate('/admin/dashboard')}
                             className="p-2 bg-white rounded-lg shadow-sm hover:bg-gray-100 text-gray-600 transition-colors"
                         >
                             <IoArrowBack size={24} />
@@ -104,7 +105,7 @@ const AdminCategory = () => {
                         </div>
                     </div>
                     <button
-                        onClick={() => navigate('/add-category')}
+                        onClick={() => navigate('/admin/add-category')}
                         className='bg-gradient-to-r from-green-500 to-green-600 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 hover:from-green-600 hover:to-green-700 transition-all shadow-md active:scale-95'
                     >
                         <FaPlus className="text-sm" />
@@ -194,7 +195,7 @@ const AdminCategory = () => {
                                                         <FaLayerGroup size={40} className="text-gray-200" />
                                                         <p>No categories found.</p>
                                                         <button
-                                                            onClick={() => navigate('/add-category')}
+                                                            onClick={() => navigate('/admin/add-category')}
                                                             className="text-blue-500 hover:underline text-sm font-medium mt-2"
                                                         >
                                                             Add your first category
@@ -212,9 +213,29 @@ const AdminCategory = () => {
                     {/* Pagination Controls */}
                     {totalPages > 1 && (
                         <div className="flex flex-col md:flex-row justify-between items-center p-6 border-t border-gray-100 bg-gray-50/30 gap-4">
-                            <span className="text-sm text-gray-500">
-                                Showing page <span className="font-semibold text-gray-700">{page}</span> of <span className="font-semibold text-gray-700">{totalPages}</span>
-                            </span>
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-500">
+                                    Showing page <span className="font-semibold text-gray-700">{page}</span> of <span className="font-semibold text-gray-700">{totalPages}</span>
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <label htmlFor="limit" className="text-sm text-gray-500">Rows per page:</label>
+                                    <select
+                                        id="limit"
+                                        value={limit}
+                                        onChange={(e) => {
+                                            setLimit(Number(e.target.value));
+                                            jumpToPage(1); // Reset to first page on limit change
+                                        }}
+                                        className="border border-gray-200 rounded-lg text-sm text-gray-700 p-1 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                    >
+                                        <option value={10}>10</option>
+                                        <option value={25}>25</option>
+                                        <option value={50}>50</option>
+                                        <option value={75}>75</option>
+                                        <option value={100}>100</option>
+                                    </select>
+                                </div>
+                            </div>
 
                             <div className="flex items-center gap-2">
                                 <button

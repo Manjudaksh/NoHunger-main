@@ -40,13 +40,24 @@ const AdminDashboard = () => {
                         <h1 className="text-4xl font-extrabold text-gray-800 mb-2 tracking-tight">Admin Dashboard</h1>
                         <p className="text-gray-500 text-lg">Manage your restaurant menu with ease.</p>
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 bg-red-600 text-white px-3 md:px-5 py-2.5 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-sm"
-                    >
-                        <FaSignOutAlt />
-                        <span className="hidden md:inline">Logout</span>
-                    </button>
+
+                    <div className="flex items-center gap-3">
+                        <a
+                            href="/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 bg-green-600 text-white px-3 md:px-5 py-2.5 rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-sm"
+                        >
+                            <span className="hidden md:inline">Home</span>
+                        </a>
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 bg-red-600 text-white px-3 md:px-5 py-2.5 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-sm"
+                        >
+                            <FaSignOutAlt />
+                            <span className="hidden md:inline">Logout</span>
+                        </button>
+                    </div>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">

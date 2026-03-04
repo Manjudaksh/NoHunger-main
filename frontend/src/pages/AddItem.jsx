@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { dataContext } from '../context/UserContext';
 import { api } from '../helpers/api';
 import { toast } from 'react-toastify';
-import { FaUtensils } from 'react-icons/fa';
+import { FaUtensils, FaArrowLeft } from 'react-icons/fa';
 
 const AddItem = () => {
     const { admin } = useContext(dataContext);
@@ -65,10 +65,23 @@ const AddItem = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6 md:p-10 font-sans flex justify-center items-center">
             <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center"><FaUtensils /></span>
-                    Add New Food Item
-                </h2>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                    <button
+                        onClick={() => navigate('/admin/item')}
+                        className="text-gray-500 hover:text-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
+                    >
+                        <FaArrowLeft /> Back to Items
+                    </button>
+                    <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center">
+                        <FaUtensils />
+                    </div>
+                </div>
+
+                <div className="mb-6 text-center">
+                    <h2 className="text-3xl font-extrabold text-gray-800 tracking-tight">Add New Food Item</h2>
+                    <p className="text-gray-500 mt-2">Create a new food item for your menu.</p>
+                </div>
                 <form onSubmit={handleAddItem} className="space-y-6">
                     <div className="flex justify-end">
                         <label className="relative inline-flex items-center cursor-pointer">

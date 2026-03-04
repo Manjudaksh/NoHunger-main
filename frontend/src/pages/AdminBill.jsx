@@ -31,11 +31,13 @@ const AdminBill = () => {
         loading,
         error,
         totalPages,
-        currentPage,
-        handlePageChange,
-        refreshData,
+        page: currentPage,
+        jumpToPage: handlePageChange,
+        refresh: refreshData,
         setData,
-        setPage // Extract setPage to reset pagination on filter change
+        setPage, // Extract setPage to reset pagination on filter change
+        limit,
+        setLimit
     } = usePagination(endpoint, 10);
 
 
@@ -326,22 +328,47 @@ const AdminBill = () => {
 
                 {/* Pagination */}
                 {!loading && orders.length > 0 && (
-                    <div className="flex justify-between items-center p-4 border-t border-gray-100 bg-gray-50">
-                        <button
-                            disabled={currentPage === 1}
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 disabled:opacity-50 hover:bg-gray-100 transition"
-                        >
-                            Previous
-                        </button>
-                        <span className="text-sm text-gray-600 font-medium">Page {currentPage} of {totalPages}</span>
-                        <button
-                            disabled={currentPage === totalPages}
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 disabled:opacity-50 hover:bg-gray-100 transition"
-                        >
-                            Next
-                        </button>
+                    <div className="flex flex-col md:flex-row justify-between items-center p-6 border-t border-gray-100 bg-gray-50/30 gap-4">
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-500">
+                                Showing page <span className="font-semibold text-gray-700">{currentPage}</span> of <span className="font-semibold text-gray-700">{totalPages}</span>
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="limit" className="text-sm text-gray-500">Rows per page:</label>
+                                <select
+                                    id="limit"
+                                    value={limit}
+                                    onChange={(e) => {
+                                        setLimit(Number(e.target.value));
+                                        setPage(1); // Reset to first page on limit change
+                                    }}
+                                    className="border border-gray-200 rounded-lg text-sm text-gray-700 p-1 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                    <option value={75}>75</option>
+                                    <option value={100}>100</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                disabled={currentPage === 1}
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 disabled:opacity-40 hover:bg-gray-50 transition shadow-sm"
+                            >
+                                Previous
+                            </button>
+                            <button
+                                disabled={currentPage === totalPages}
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 disabled:opacity-40 hover:bg-gray-50 transition shadow-sm"
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

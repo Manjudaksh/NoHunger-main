@@ -329,19 +329,39 @@ const Bill = ({ items, onClose, isAdmin = false, customerDetails, orderDate, del
 
                 <style>{`
                     @media print {
-                        body * { visibility: hidden; }
-                        #receipt, #receipt * { visibility: visible; }
-                        #receipt {
-                            position: absolute;
-                            left: 0;
-                            top: 0;
-                            width: 100%;
-                            margin: 0;
-                            padding: 0;
-                            border: none;
-                            box-shadow: none;
+                        /* 1. Hide everything by default */
+                        body * {
+                            visibility: hidden;
                         }
-                        @page { margin: 0; size: auto; }
+                        /* 2. Show the receipt and its text */
+                        #receipt, #receipt * {
+                            visibility: visible;
+                        }
+                        /* 3. Pull the receipt out to the top left of the physical page */
+                        #receipt {
+                            position: absolute !important;
+                            left: 0 !important;
+                            top: 0 !important;
+                            width: 100% !important;
+                            background-color: white !important;
+                            padding: 0 !important;
+                            margin: 0 !important;
+                        }
+                        /* 4. Disable modal scroll locks and height limiters so it doesn't print a blank or cropped box */
+                        html, body, #root, .fixed, .max-h-\\[90vh\\], .overflow-y-auto {
+                            height: auto !important;
+                            max-height: none !important;
+                            overflow: visible !important;
+                            position: static !important;
+                        }
+                        @page { 
+                            size: auto;
+                            margin: 0mm; /* This removes the browser's default header/footer (Vite + React text) */
+                        }
+                        /* Add some padding directly to the receipt instead of relying on page margins */
+                        #receipt {
+                            padding: 2cm !important;
+                        }
                     }
                 `}</style>
             </div>

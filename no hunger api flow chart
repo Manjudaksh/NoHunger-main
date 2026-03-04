@@ -1,0 +1,69 @@
+# NoHunger API Flow Analysis
+
+This document outlines the complete flow of APIs from the React frontend to the Express backend in the NoHunger project. All frontend API requests are made using a configured `axios` instance (`api`) with a base URL of `http://localhost:5000/api`.
+
+## 1. Authentication APIs (`/api/auth`)
+Handled by [authRoutes.js](file:///c:/Users/DELL/Desktop/NoHunger-main/backend/routes/authRoutes.js) and `authController.js` in the backend.
+- **POST `/api/auth/login`**
+  - **Called from**: [frontend/src/pages/AdminLogin.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AdminLogin.jsx)
+  - **Purpose**: Authenticates the admin user and receives a JWT token, which is stored in `localStorage` and attached to subsequent requests via an axios interceptor.
+- **POST `/api/auth/register`**
+  - **Called from**: *Not actively used in the frontend components* (likely added for backend seed or future expansion).
+
+## 2. Category APIs (`/api/categories`)
+Handled by [categoryRoutes.js](file:///c:/Users/DELL/Desktop/NoHunger-main/backend/routes/categoryRoutes.js) and `categoryController.js`.
+- **GET `/api/categories`**
+  - **Called from**: 
+    - [frontend/src/context/UserContext.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/context/UserContext.jsx) (loads all categories on app start for the home page).
+    - [frontend/src/pages/AddItem.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AddItem.jsx) (fetches categories for the item creation dropdown).
+    - [frontend/src/pages/EditItem.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/EditItem.jsx) (fetches categories for the item edit dropdown).
+    - [frontend/src/hooks/usePagination.js](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/hooks/usePagination.js) (used by [AdminCategory.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AdminCategory.jsx) to fetch paginated lists).
+- **POST `/api/categories`**
+  - **Called from**: [frontend/src/pages/AddCategory.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AddCategory.jsx)
+  - **Purpose**: Allows admins to create a new category (supports image upload).
+- **PUT `/api/categories/:id`**
+  - **Called from**: [frontend/src/components/EditCategoryModal.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/components/EditCategoryModal.jsx)
+  - **Purpose**: Admin edits an existing category name/image.
+- **DELETE `/api/categories/:id`**
+  - **Called from**: [frontend/src/pages/AdminCategory.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AdminCategory.jsx)
+  - **Purpose**: Admin deletes a category.
+
+## 3. Food Items APIs (`/api/foods`)
+Handled by [foodRoutes.js](file:///c:/Users/DELL/Desktop/NoHunger-main/backend/routes/foodRoutes.js) and `foodController.js`.
+- **GET `/api/foods`**
+  - **Called from**: 
+    - [frontend/src/context/UserContext.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/context/UserContext.jsx) (fetches foods for the landing page with optional `?category=...&search=...` query attributes).
+    - [frontend/src/hooks/usePagination.js](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/hooks/usePagination.js) (used by [AdminItem.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AdminItem.jsx) for paginated admin table).
+- **GET `/api/foods/:id`**
+  - **Called from**: [frontend/src/pages/EditItem.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/EditItem.jsx)
+  - **Purpose**: Fetches data for a specific food item to populate the edit form.
+- **POST `/api/foods`**
+  - **Called from**: [frontend/src/pages/AddItem.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AddItem.jsx)
+  - **Purpose**: Admins add a new food item (supports image upload).
+- **PUT `/api/foods/:id`**
+  - **Called from**: [frontend/src/pages/EditItem.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/EditItem.jsx)
+  - **Purpose**: Admins update an existing food item.
+- **DELETE `/api/foods/:id`**
+  - **Called from**: [frontend/src/pages/AdminItem.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AdminItem.jsx)
+  - **Purpose**: Admins delete a food item.
+
+## 4. Order APIs (`/api/orders`)
+Handled by [orderRoutes.js](file:///c:/Users/DELL/Desktop/NoHunger-main/backend/routes/orderRoutes.js) and `orderController.js`.
+- **POST `/api/orders`**
+  - **Called from**: [frontend/src/pages/Home.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/Home.jsx)
+  - **Purpose**: Public route used by customers when they submit their cart and place an order.
+- **GET `/api/orders`**
+  - **Called from**: [frontend/src/hooks/usePagination.js](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/hooks/usePagination.js) (used by [AdminBill.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AdminBill.jsx))
+  - **Purpose**: Admin fetches all orders (paginated), usually filtered by date.
+- **PUT `/api/orders/:id/status`**
+  - **Called from**: [frontend/src/pages/AdminBill.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AdminBill.jsx)
+  - **Purpose**: Admin updates the status of an order (e.g., Pending, Completed).
+- **PUT `/api/orders/:id/tax`**
+  - **Called from**: [frontend/src/pages/AdminBill.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AdminBill.jsx)
+  - **Purpose**: Admin toggles whether tax is applied to an order.
+- **PUT `/api/orders/:id/discount`**
+  - **Called from**: [frontend/src/pages/AdminBill.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AdminBill.jsx)
+  - **Purpose**: Admin applies a generic admin discount to an order.
+- **PUT `/api/orders/:id/bill`**
+  - **Called from**: [frontend/src/pages/AdminBill.jsx](file:///c:/Users/DELL/Desktop/NoHunger-main/frontend/src/pages/AdminBill.jsx)
+  - **Purpose**: Admin multi-stage update for comprehensive bill modifications.

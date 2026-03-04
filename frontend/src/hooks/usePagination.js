@@ -77,8 +77,6 @@ const usePagination = (endpoint, initialLimit = 10) => {
         jumpToPage,
         setPage,
         setLimit,
-        setPage,
-        setLimit,
         refresh,
         setData
     };

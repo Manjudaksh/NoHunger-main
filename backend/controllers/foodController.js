@@ -9,6 +9,10 @@ exports.createFood = async (req, res) => {
     try {
         const { name, description, price, categoryId, active, discount, tax } = req.body;
 
+        let parsedActive = active;
+        if (active === 'true') parsedActive = true;
+        if (active === 'false') parsedActive = false;
+
         const food = await Food.create({
             name,
             description,
@@ -16,7 +20,7 @@ exports.createFood = async (req, res) => {
             discount: discount || 0,
             tax: tax || 0,
             categoryId,
-            active,
+            active: parsedActive !== undefined ? parsedActive : true,
             image: req.file ? req.file.path : ''
         });
 
@@ -138,7 +142,13 @@ exports.updateFood = async (req, res) => {
         food.discount = discount !== undefined ? discount : food.discount;
         food.tax = tax !== undefined ? tax : food.tax;
         food.categoryId = categoryId || food.categoryId;
-        if (active !== undefined) food.active = active;
+
+        let parsedActive = active;
+        if (active === 'true') parsedActive = true;
+        if (active === 'false') parsedActive = false;
+
+        if (parsedActive !== undefined) food.active = parsedActive;
+
         food.image = imagePath;
 
         const updatedFood = await food.save();
