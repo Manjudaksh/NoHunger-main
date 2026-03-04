@@ -2,32 +2,37 @@ import React, { useState } from 'react';
 import usePagination from '../hooks/usePagination'; // Adjust path as needed
 import { api } from '../helpers/api';
 import { toast } from 'react-toastify';
-import { IoArrowBack, IoSearch } from 'react-icons/io5';
+import { IoArrowBack, IoSearch, IoWalletOutline, IoPeopleOutline } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
 import Bill from '../components/Bill'; // Adjust path
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const AdminBill = () => {
     const navigate = useNavigate();
-    const [selectedDate, setSelectedDate] = useState('');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
     const [viewBill, setViewBill] = useState(null); // Stores the order object to be viewed
 
 
 
 
-    // Helper to build query string including date
+    // Helper to build query string including date ranges
     const buildQuery = (params) => {
         let query = `?page=${params.page}&limit=${params.limit}`;
-        if (selectedDate) {
-            query += `&date=${selectedDate}`;
-        }
+        if (fromDate) query += `&startDate=${fromDate}`;
+        if (toDate) query += `&endDate=${toDate}`;
         return query;
     };
 
-    const endpoint = selectedDate ? `/orders?date=${selectedDate}` : '/orders';
+    let endpointParams = new URLSearchParams();
+    if (fromDate) endpointParams.append('startDate', fromDate);
+    if (toDate) endpointParams.append('endDate', toDate);
+    const endpointStr = endpointParams.toString();
+    const endpoint = '/orders' + (endpointStr ? `?${endpointStr}` : '');
 
     const {
         data: orders,
+        extraData,
         loading,
         error,
         totalPages,
@@ -39,6 +44,8 @@ const AdminBill = () => {
         limit,
         setLimit
     } = usePagination(endpoint, 10);
+
+    const { totalIncome = 0, totalCustomers = 0 } = extraData || {};
 
 
 
@@ -54,27 +61,6 @@ const AdminBill = () => {
     // Assuming standard fetch, we might need a useEffect to call fetch when selectedDate changes in the hook, 
     // OR we just use a wrapper here. 
     // Let's try passing the Full URL string constructed dynamically? No, hook usually takes base.
-
-    // Quick fix: manually refetch when date changes
-    // But better: usePagination usually re-runs if args change.
-
-    // Let's Refetch manually on Date Change for now inside a useEffect if needed, 
-    // but React state change on selectedDate triggers re-render, 
-    // so we need to pass the *current* query to the hook if the hook accepts it as a function or dep.
-    // If usePagination takes just string, we might need to modify usePagination to accept params object?
-    // Or just construct string: `/orders?date=${selectedDate}`.
-
-    // To be safe/simple without seeing usePagination code again:
-    // We will use a key to force re-mount or re-fetch.
-
-    // Real implementation: Pass the dynamic URL.
-    const dynamicUrl = `/orders${selectedDate ? `?date=${selectedDate}` : ''}`;
-    // Actually, usePagination likely handles `?page=...`. 
-    // If I pass `/orders?date=...`, the hook might append `&page=...`.
-    // Let's assume the hook appends using `?` or `&` correctly or we handle it.
-    // Let's look at usePagination.js?
-    // I can't look at it right now without tool call.
-    // I'll assume standard appending. 
 
     // Confirmation State
     const [confirmAction, setConfirmAction] = useState({
@@ -226,21 +212,54 @@ const AdminBill = () => {
                 </div>
 
                 {/* Filters */}
-                <div className="flex items-center gap-3 w-full md:w-auto bg-white p-2 rounded-lg shadow-sm border border-gray-200">
-                    <span className="text-sm font-medium text-gray-500 pl-2">Filter Date:</span>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+                    <span className="text-sm font-medium text-gray-500 pl-2">From:</span>
                     <input
                         type="date"
-                        value={selectedDate}
+                        value={fromDate}
                         onChange={(e) => {
-                            setSelectedDate(e.target.value);
+                            setFromDate(e.target.value);
                             setPage(1); // Reset to first page when filter changes
                         }}
-                        className="outline-none text-gray-700 font-medium"
+                        className="outline-none text-gray-700 font-medium text-sm border-r border-gray-200 pr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-500 pl-2">To:</span>
+                    <input
+                        type="date"
+                        value={toDate}
+                        onChange={(e) => {
+                            setToDate(e.target.value);
+                            setPage(1); // Reset to first page when filter changes
+                        }}
+                        className="outline-none text-gray-700 font-medium text-sm"
                     />
                     {/* Manual Refresh Button just in case user wants to force */}
-                    <button onClick={refreshData} className="p-1 text-green-600 hover:bg-green-50 rounded">
+                    <button onClick={refreshData} className="p-1 sm:ml-2 text-green-600 hover:bg-green-50 rounded">
                         <IoSearch size={20} />
                     </button>
+                </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Total Income Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full -z-10 opacity-60"></div>
+                    <div className="p-3 bg-green-100/50 text-green-600 rounded-2xl mb-4">
+                        <IoWalletOutline size={32} />
+                    </div>
+                    <h3 className="text-gray-500 font-medium text-sm mb-1 uppercase tracking-wider">Total Income (Paid)</h3>
+                    <p className="text-3xl font-bold text-gray-800">₹{totalIncome.toFixed(2)}</p>
+                </div>
+
+                {/* Total Customers Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-32 h-32 bg-blue-50 rounded-br-full -z-10 opacity-60"></div>
+                    <div className="p-3 bg-blue-100/50 text-blue-600 rounded-2xl mb-4">
+                        <IoPeopleOutline size={32} />
+                    </div>
+                    <h3 className="text-gray-500 font-medium text-sm mb-1 uppercase tracking-wider">Total Customers</h3>
+                    <p className="text-3xl font-bold text-gray-800">{totalCustomers}</p>
                 </div>
             </div>
 

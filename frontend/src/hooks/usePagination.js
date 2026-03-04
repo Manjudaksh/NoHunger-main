@@ -10,6 +10,7 @@ const usePagination = (endpoint, initialLimit = 10) => {
     const [limit, setLimit] = useState(initialLimit);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
+    const [extraData, setExtraData] = useState({});
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -35,6 +36,10 @@ const usePagination = (endpoint, initialLimit = 10) => {
             setData(fetchedData);
             setTotalPages(res.data.totalPages || 1);
             setTotalItems(res.data.total || fetchedData.length);
+
+            // Extract extra data fields
+            const { categories: _c, foods: _f, orders: _o, totalPages: _tp, total: _t, currentPage: _cp, ...rest } = res.data;
+            setExtraData(rest);
         } catch (err) {
             console.error(`Failed to fetch data from ${endpoint}:`, err);
             setError(err.message || "Failed to fetch data");
@@ -66,6 +71,7 @@ const usePagination = (endpoint, initialLimit = 10) => {
 
     return {
         data,
+        extraData,
         loading,
         error,
         page,

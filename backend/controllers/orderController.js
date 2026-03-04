@@ -61,22 +61,34 @@ exports.createOrder = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
     try {
         const { skip, limit, getMetadata } = paginate(req.query);
-        const { date } = req.query;
+        const { date, startDate, endDate } = req.query;
 
         let query = {};
 
         // Date filter (matches the entire day)
-        if (date) {
-            const startDate = new Date(date);
-            startDate.setHours(0, 0, 0, 0);
-
-            const endDate = new Date(date);
-            endDate.setHours(23, 59, 59, 999);
-
-            query.createdAt = {
-                $gte: startDate,
-                $lte: endDate
-            };
+        if (date || startDate || endDate) {
+            query.createdAt = {};
+            if (date) {
+                const sDate = new Date(date);
+                sDate.setHours(0, 0, 0, 0);
+                const eDate = new Date(date);
+                eDate.setHours(23, 59, 59, 999);
+                query.createdAt = {
+                    $gte: sDate,
+                    $lte: eDate
+                };
+            } else {
+                if (startDate) {
+                    const sDate = new Date(startDate);
+                    sDate.setHours(0, 0, 0, 0);
+                    query.createdAt.$gte = sDate;
+                }
+                if (endDate) {
+                    const eDate = new Date(endDate);
+                    eDate.setHours(23, 59, 59, 999);
+                    query.createdAt.$lte = eDate;
+                }
+            }
         }
 
         const orders = await Order.find(query)
@@ -86,8 +98,33 @@ exports.getAllOrders = async (req, res) => {
 
         const total = await Order.countDocuments(query);
 
+        // Calculate summary statistics
+        const [stats] = await Order.aggregate([
+            { $match: query },
+            {
+                $group: {
+                    _id: null,
+                    totalIncome: {
+                        $sum: { $cond: [{ $eq: ["$status", 1] }, "$totalAmount", 0] }
+                    },
+                    uniquePhones: { $addToSet: "$user.phone" }
+                }
+            },
+            {
+                $project: {
+                    totalIncome: 1,
+                    totalCustomers: { $size: "$uniquePhones" }
+                }
+            }
+        ]);
+
+        const totalIncome = stats ? stats.totalIncome : 0;
+        const totalCustomers = stats ? stats.totalCustomers : 0;
+
         res.status(200).json({
             orders,
+            totalIncome,
+            totalCustomers,
             ...getMetadata(total)
         });
     } catch (error) {
