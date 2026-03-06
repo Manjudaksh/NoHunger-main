@@ -2,7 +2,7 @@ import React, { useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataContext } from '../context/UserContext';
 import { toast } from 'react-toastify';
-import { FaUtensils, FaArrowRight, FaShapes, FaSignOutAlt } from 'react-icons/fa';
+import { FaUtensils, FaArrowRight, FaShapes, FaSignOutAlt, FaUsers } from 'react-icons/fa';
 
 const AdminDashboard = () => {
     const { admin, setAdmin } = useContext(dataContext);
@@ -78,6 +78,12 @@ const AdminDashboard = () => {
                         icon={<FaUtensils size={24} />}
                         color="bg-gradient-to-br from-blue-400 to-cyan-500"
                         onClick={() => navigate('/admin/bill')}
+                    />
+                    <SelectionCard
+                        title="User Details"
+                        icon={<FaUsers size={24} />}
+                        color="bg-gradient-to-br from-green-400 to-emerald-500"
+                        onClick={() => navigate('/admin/userDetails')}
                     />
                 </div>
             </div>

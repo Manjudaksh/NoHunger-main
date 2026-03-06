@@ -8,6 +8,7 @@ import AdminItem from './pages/AdminItem'
 import AddItem from './pages/AddItem'
 import EditItem from './pages/EditItem'
 import AdminBill from './pages/AdminBill'
+import AdminUserDetails from './pages/AdminUserDetails'
 import { Routes, Route } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 
@@ -27,6 +28,7 @@ const App = () => {
         <Route path="/admin/add-item" element={<ProtectedAdminRoute><AddItem /></ProtectedAdminRoute>} />
         <Route path="/admin/edit-item/:id" element={<ProtectedAdminRoute><EditItem /></ProtectedAdminRoute>} />
         <Route path="/admin/bill" element={<ProtectedAdminRoute><AdminBill /></ProtectedAdminRoute>} />
+        <Route path="/admin/userDetails" element={<ProtectedAdminRoute><AdminUserDetails /></ProtectedAdminRoute>} />
       </Routes>
       <ToastContainer />
     </>

@@ -27,6 +27,7 @@ const usePagination = (endpoint, initialLimit = 10) => {
             if (res.data.categories) fetchedData = res.data.categories;
             else if (res.data.foods) fetchedData = res.data.foods;
             else if (res.data.orders) fetchedData = res.data.orders;
+            else if (res.data.users) fetchedData = res.data.users; // Support for unique users
             else if (Array.isArray(res.data)) fetchedData = res.data; // Fallback if no specific key
             else fetchedData = []; // Should not happen with current backend
 
