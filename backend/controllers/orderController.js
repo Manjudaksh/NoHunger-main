@@ -339,3 +339,49 @@ exports.updateOrderBill = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Get Unique Users Grouped by Phone (with Pagination)
+exports.getUniqueUsers = async (req, res) => {
+    try {
+        const { skip, limit, getMetadata, page } = paginate(req.query);
+
+        // Use facet to get both total count and paginated results in one query
+        const aggregationResult = await Order.aggregate([
+            {
+                $group: {
+                    _id: "$user.phone",
+                    name: { $first: "$user.name" },
+                    email: { $first: "$user.email" },
+                    phone: { $first: "$user.phone" },
+                    totalOrders: { $sum: 1 },
+                    lastOrderDate: { $max: "$createdAt" }
+                }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "totalCount" }],
+                    data: [
+                        { $sort: { lastOrderDate: -1 } }, // Sort by recent activity
+                        { $skip: skip },
+                        { $limit: limit }
+                    ]
+                }
+            }
+        ]);
+
+        const totalCount = aggregationResult[0].metadata.length > 0
+            ? aggregationResult[0].metadata[0].totalCount
+            : 0;
+        const uniqueUsers = aggregationResult[0].data;
+
+        // Use our getMetadata utility. The paginate util needs total documents.
+        const paginationMeta = getMetadata(totalCount);
+
+        res.status(200).json({
+            users: uniqueUsers,
+            ...paginationMeta
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
